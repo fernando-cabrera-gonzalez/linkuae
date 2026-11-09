@@ -385,6 +385,9 @@
     <ClCompile Include="..\..\gdb_target.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\linkuae.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\gfxutil.cpp">
       <Filter>common</Filter>
     </ClCompile>

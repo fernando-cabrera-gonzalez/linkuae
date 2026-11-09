@@ -567,6 +567,10 @@ struct uae_prefs {
 #ifdef GDBSERVER
 	int gdb_port;
 #endif
+#ifdef WITH_LINKUAE
+	bool linkuae;
+	int linkuae_timeout;
+#endif
 	TCHAR debugging_options[MAX_DPATH];
 	bool start_gui;
 

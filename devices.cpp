@@ -1,6 +1,7 @@
 #include "sysconfig.h"
 #include "sysdeps.h"
 #include "gdb_server.h"
+#include "linkuae.h"
 
 #include "devices.h"
 
@@ -126,6 +127,8 @@ static DEVICE_VOID device_callbacks[MAX_DEVICE_ITEMS];
 
 void device_call_main_thread_callbacks(void)
 {
+	// Called only at CPU instruction boundaries (SPCFLAG_CALLBACK).
+	linkuae_instruction_boundary();
 	uae_sem_wait(&thread_sema);
 	DEVICE_VOID device_callbacks_tmp[MAX_DEVICE_ITEMS];
 	int device_callbacks_cnt_tmp = device_callbacks_cnt;
@@ -375,6 +378,7 @@ void devices_update_sync(float svpos, float syncadjust)
 void virtualdevice_free(void)
 {
 	gdb_server_close();
+	linkuae_close();
 #ifdef WITH_PPC
 	// must be first
 	uae_ppc_free();

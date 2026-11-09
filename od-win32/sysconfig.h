@@ -37,6 +37,7 @@
 
 #define DEBUGGER
 #define GDBSERVER
+#define WITH_LINKUAE /* external control: shared memory + events */
 #define FILESYS /* filesys emulation */
 #define UAE_FILESYS_THREADS
 #define AUTOCONFIG /* autoconfig support, fast ram, harddrives etc.. */

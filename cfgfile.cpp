@@ -2087,6 +2087,10 @@ void cfgfile_save_options (struct zfile *f, struct uae_prefs *p, int type)
 #ifdef GDBSERVER
 	cfgfile_dwrite(f, _T("gdb_port"), _T("%d"), p->gdb_port);
 #endif
+#ifdef WITH_LINKUAE
+	cfgfile_dwrite_bool(f, _T("linkuae"), p->linkuae);
+	cfgfile_dwrite(f, _T("linkuae_timeout"), _T("%d"), p->linkuae_timeout);
+#endif
 
 	cfgfile_write_rom (f, &p->path_rom, p->romfile, _T("kickstart_rom_file"));
 	cfgfile_write_rom (f, &p->path_rom, p->romextfile, _T("kickstart_ext_rom_file"));
@@ -3908,6 +3912,15 @@ static int cfgfile_parse_host (struct uae_prefs *p, TCHAR *option, TCHAR *value)
 		return 1;
 	}
 #endif
+#endif
+#ifdef WITH_LINKUAE
+	if (cfgfile_yesno(option, value, _T("linkuae"), &p->linkuae))
+		return 1;
+	if (cfgfile_intval(option, value, _T("linkuae_timeout"), &p->linkuae_timeout, 1)) {
+		if (p->linkuae_timeout < 1 || p->linkuae_timeout > 60000)
+			p->linkuae_timeout = 1000;
+		return 1;
+	}
 #endif
 
 	if (cfgfile_yesno(option, value, _T("gfx_api_hdr"), &vb)) {
@@ -8554,6 +8567,9 @@ void default_prefs (struct uae_prefs *p, bool reset, int type)
 	reset_inputdevice_config (p, reset);
 	memset (p, 0, sizeof (*p));
 	_tcscpy (p->description, _T("UAE default configuration"));
+#ifdef WITH_LINKUAE
+	p->linkuae_timeout = 1000; // buildin_default_prefs only runs for quickstart presets
+#endif
 	p->config_hardware_path[0] = 0;
 	p->config_host_path[0] = 0;
 
@@ -9045,6 +9061,10 @@ static void buildin_default_prefs (struct uae_prefs *p)
 	p->debug_mem = false;
 #ifdef GDBSERVER
 	p->gdb_port = 2345;
+#endif
+#ifdef WITH_LINKUAE
+	p->linkuae = false;
+	p->linkuae_timeout = 1000;
 #endif
 
 	target_default_options (p, 1);
