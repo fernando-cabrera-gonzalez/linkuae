@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Local build overrides: WDK km headers of the installed SDK (project hardcodes 10.0.18362.0 on C:). -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <IncludePath>$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\km;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+</Project>

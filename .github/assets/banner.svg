@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 360" width="1280" height="360" role="img" aria-label="LinkUAE for WinUAE: real-time control of an emulated Amiga">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1730"/>
+      <stop offset="1" stop-color="#16294f"/>
+    </linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#ffffff" stroke-opacity="0.04"/>
+    </pattern>
+    <clipPath id="ball"><circle cx="0" cy="0" r="34"/></clipPath>
+    <path id="up" d="M1040 138 Q959 52 878 138"/>
+    <path id="down" d="M878 204 Q959 290 1040 204"/>
+  </defs>
+
+  <rect width="1280" height="360" rx="18" fill="url(#bg)"/>
+  <rect width="1280" height="360" rx="18" fill="url(#grid)"/>
+
+  <!-- Title -->
+  <g font-family="Segoe UI, Helvetica, Arial, sans-serif">
+    <text x="74" y="104" font-size="18" font-weight="600" letter-spacing="3" fill="#7f93b8">FOR WINUAE</text>
+    <text x="72" y="172" font-size="66" font-weight="700" fill="#ffffff">Link<tspan fill="#ff8a3d">UAE</tspan></text>
+    <text x="74" y="218" font-size="26" fill="#c9d6ee">Drive an emulated Amiga, frame by frame.</text>
+    <g font-size="17" font-weight="600">
+      <rect x="74" y="248" width="128" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/>
+      <text x="138" y="271" text-anchor="middle" fill="#ffd2b3">lockstep</text>
+      <rect x="214" y="248" width="168" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/>
+      <text x="298" y="271" text-anchor="middle" fill="#bfe6ff">shared memory</text>
+      <rect x="394" y="248" width="148" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/>
+      <text x="468" y="271" text-anchor="middle" fill="#d9f5c8">bots &amp; AIs</text>
+    </g>
+  </g>
+
+  <!-- Amiga monitor with the checkered ball (right) -->
+  <g transform="translate(324 0)">
+    <rect x="726" y="98" width="148" height="122" rx="12" fill="#d9d2c2"/>
+    <rect x="740" y="111" width="120" height="96" rx="6" fill="#0b1730"/>
+    <g transform="translate(800 159)">
+      <g clip-path="url(#ball)" transform="rotate(-18)">
+        <rect x="-34" y="-34" width="68" height="68" fill="#f2f2f2"/>
+        <g fill="#e2333c">
+          <rect x="-34" y="-34" width="17" height="17"/><rect x="0" y="-34" width="17" height="17"/>
+          <rect x="-17" y="-17" width="17" height="17"/><rect x="17" y="-17" width="17" height="17"/>
+          <rect x="-34" y="0" width="17" height="17"/><rect x="0" y="0" width="17" height="17"/>
+          <rect x="-17" y="17" width="17" height="17"/><rect x="17" y="17" width="17" height="17"/>
+        </g>
+      </g>
+      <animateTransform attributeName="transform" type="translate" values="800 150;800 166;800 150" dur="1.2s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 1 1;0 0 0.6 1"/>
+    </g>
+    <path d="M786 220 H814 L820 236 H780 Z" fill="#bfb7a6"/>
+    <rect x="762" y="236" width="76" height="9" rx="4" fill="#d9d2c2"/>
+  </g>
+
+  <!-- Robot (left) -->
+  <g transform="translate(-324 0)">
+    <line x1="1124" y1="96" x2="1124" y2="112" stroke="#3fb8ff" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="1124" cy="91" r="7" fill="#ff8a3d">
+      <animate attributeName="fill-opacity" values="1;0.3;1" dur="1.6s" repeatCount="indefinite"/>
+    </circle>
+    <rect x="1062" y="146" width="12" height="34" rx="5" fill="#3fb8ff" fill-opacity="0.5"/>
+    <rect x="1174" y="146" width="12" height="34" rx="5" fill="#3fb8ff" fill-opacity="0.5"/>
+    <rect x="1072" y="112" width="104" height="100" rx="22" fill="#1d3a6b" stroke="#3fb8ff" stroke-width="3"/>
+    <g fill="#3fb8ff">
+      <rect x="1093" y="142" width="22" height="22" rx="11">
+        <animate attributeName="height" values="22;22;3;22;22" keyTimes="0;0.9;0.95;0.98;1" dur="4s" repeatCount="indefinite"/>
+        <animate attributeName="y" values="142;142;151;142;142" keyTimes="0;0.9;0.95;0.98;1" dur="4s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="1133" y="142" width="22" height="22" rx="11">
+        <animate attributeName="height" values="22;22;3;22;22" keyTimes="0;0.9;0.95;0.98;1" dur="4s" repeatCount="indefinite"/>
+        <animate attributeName="y" values="142;142;151;142;142" keyTimes="0;0.9;0.95;0.98;1" dur="4s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="1102" y="184" width="44" height="8" rx="4" fill-opacity="0.6"/>
+    </g>
+  </g>
+
+  <!-- Link: Amiga -> bot (state), bot -> Amiga (input) -->
+  <use xlink:href="#up" fill="none" stroke="#3fb8ff" stroke-width="3" stroke-opacity="0.35" stroke-dasharray="4 8" stroke-linecap="round"/>
+  <use xlink:href="#down" fill="none" stroke="#ff8a3d" stroke-width="3" stroke-opacity="0.35" stroke-dasharray="4 8" stroke-linecap="round"/>
+  <path d="M892 128 L877 139 L893 146" fill="none" stroke="#3fb8ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M1026 214 L1041 203 L1025 196" fill="none" stroke="#ff8a3d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Packets travelling -->
+  <g fill="#3fb8ff">
+    <rect x="-5" y="-5" width="10" height="10" rx="2"><animateMotion dur="1.8s" repeatCount="indefinite" begin="0s"><mpath xlink:href="#up"/></animateMotion></rect>
+    <rect x="-5" y="-5" width="10" height="10" rx="2"><animateMotion dur="1.8s" repeatCount="indefinite" begin="-0.6s"><mpath xlink:href="#up"/></animateMotion></rect>
+    <rect x="-5" y="-5" width="10" height="10" rx="2"><animateMotion dur="1.8s" repeatCount="indefinite" begin="-1.2s"><mpath xlink:href="#up"/></animateMotion></rect>
+  </g>
+  <g fill="#ff8a3d">
+    <circle r="5"><animateMotion dur="1.8s" repeatCount="indefinite" begin="-0.3s"><mpath xlink:href="#down"/></animateMotion></circle>
+    <circle r="5"><animateMotion dur="1.8s" repeatCount="indefinite" begin="-0.9s"><mpath xlink:href="#down"/></animateMotion></circle>
+    <circle r="5"><animateMotion dur="1.8s" repeatCount="indefinite" begin="-1.5s"><mpath xlink:href="#down"/></animateMotion></circle>
+  </g>
+
+  <!-- Badges: memory chip (state) and joystick (input) -->
+  <g transform="translate(959 95)">
+    <circle r="24" fill="#12244a" stroke="#3fb8ff" stroke-width="2"/>
+    <g stroke="#3fb8ff" stroke-width="2" stroke-linecap="round">
+      <line x1="-6" y1="-13" x2="-6" y2="-9"/><line x1="0" y1="-13" x2="0" y2="-9"/><line x1="6" y1="-13" x2="6" y2="-9"/>
+      <line x1="-6" y1="9" x2="-6" y2="13"/><line x1="0" y1="9" x2="0" y2="13"/><line x1="6" y1="9" x2="6" y2="13"/>
+    </g>
+    <rect x="-11" y="-9" width="22" height="18" rx="3" fill="#3fb8ff"/>
+  </g>
+  <g transform="translate(959 247)">
+    <circle r="24" fill="#12244a" stroke="#ff8a3d" stroke-width="2"/>
+    <rect x="-12" y="6" width="24" height="8" rx="3" fill="#ff8a3d"/>
+    <line x1="0" y1="6" x2="3" y2="-8" stroke="#ff8a3d" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="3" cy="-10" r="5" fill="#ff8a3d"/>
+    <circle cx="-7" cy="5" r="2.5" fill="#ffd2b3"/>
+  </g>
+</svg>

@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse · LinkUAE</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #080c11;
+  --panel: #0e141c;
+  --panel-hi: #131b26;
+  --well: #060a0e;
+  --border: #1f2a38;
+  --border-hi: #2f3d51;
+  --text: #e4eaf2;
+  --muted: #9aa9bd;
+  --dim: #8392a7;
+  --accent: #2dd889;
+  --warn: #ffc94a;
+  --stop: #ff7a66;
+  /* read by panel.js: the game's colours (do not change the first three) */
+  --sky: #001d3a;
+  --gate: #22dd88;
+  --square: #ffdd00;
+  --dead: #ff3300;
+  --aim: #6fb6ff;
+  --line: #0f7a4c;
+  --label: #c6d4e6;
+  /* one colour per field of the state block */
+  --f-mode: #b99cff;
+  --f-score: #ffdd00;
+  --f-y: #ff9f43;
+  --f-speed: #ff7eb6;
+  --f-gatex: #22dd88;
+  --f-gap: #4fd1e8;
+  --f-best: #f2f5f9;
+  --f-minor: #8392a7;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+}
+* { box-sizing: border-box; }
+html { font-size: clamp(14px, calc(10px + 0.3vw), 17px); }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 1rem/1.45 var(--sans);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1480px; margin: 0 auto; padding: 0 clamp(16px, 2.2vw, 40px); }
+
+/* ---------- header ---------- */
+/* same two columns as main, so the run state starts where the Game state panel does */
+.bar { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); align-items: center; gap: 14px clamp(18px, 2vw, 30px); padding-top: 22px; padding-bottom: 6px; }
+.lead { min-width: 0; }
+.side { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 22px; min-width: 0; }
+.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.brand svg { flex: none; display: block; }
+h1 { margin: 0; font: 700 1.5rem/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; }
+.tagline { margin: 6px 0 0; font: 0.85rem/1.3 var(--mono); color: var(--muted); }
+.tagline b { color: var(--text); font-weight: 600; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+
+#phase {
+  display: inline-flex; align-items: center; gap: 9px;
+  min-width: 8.6rem;
+  padding: 6px 14px 6px 12px;
+  border: 1px solid var(--border-hi);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  font: 700 0.78rem/1 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+#phase::before { content: ""; flex: none; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid currentColor; }
+#phase[data-phase="booting"] { color: var(--warn); border-color: #5c4a1d; background: #17130a; }
+#phase[data-phase="booting"]::before { background: currentColor; animation: blink 0.9s steps(2, jump-none) infinite; }
+#phase[data-phase="running"] { color: var(--accent); border-color: #1d5a40; background: #0a1812; }
+#phase[data-phase="running"]::before { background: currentColor; box-shadow: 0 0 0 3px rgba(45, 216, 137, 0.18), 0 0 10px rgba(45, 216, 137, 0.7); }
+@keyframes blink { from { opacity: 1; } to { opacity: 0.25; } }
+
+.switch { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 4px; cursor: pointer; font-weight: 600; font-size: 0.9rem; user-select: none; }
+.switch input {
+  appearance: none; -webkit-appearance: none; margin: 0; flex: none; position: relative;
+  width: 40px; height: 22px; border-radius: 999px;
+  border: 1px solid var(--border-hi); background: var(--panel-hi); cursor: pointer;
+}
+.switch input::before { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--muted); }
+.switch input:checked { background: #0f3b29; border-color: var(--accent); }
+.switch input:checked::before { left: 21px; background: var(--accent); }
+.switch:hover input { border-color: var(--muted); }
+.switch:hover input:checked { border-color: #6ff0b4; }
+
+button {
+  display: inline-flex; align-items: center; gap: 9px;
+  min-height: 44px; padding: 0 20px;
+  border: 1px solid var(--border-hi); border-radius: 6px;
+  background: var(--panel-hi); color: var(--text);
+  font: 700 0.85rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer;
+}
+button svg { flex: none; }
+#start:enabled { background: var(--accent); border-color: var(--accent); color: #03261a; }
+#start:enabled:hover { background: #63ecac; border-color: #63ecac; }
+#start:enabled:active { background: #20b571; border-color: #20b571; }
+#stop:enabled { background: #1c0f0d; border-color: var(--stop); color: var(--stop); }
+#stop:enabled:hover { background: var(--stop); color: #2b0d07; }
+#stop:enabled:active { background: #e25e4a; color: #2b0d07; }
+button:disabled { background: transparent; border-color: var(--border); border-style: dashed; color: var(--dim); cursor: not-allowed; }
+:focus-visible { outline: 2px solid var(--aim); outline-offset: 3px; }
+
+#error {
+  position: relative;
+  margin: 14px 0 0;
+  padding: 11px 16px 11px 46px;
+  border: 1px solid #7a2f24; border-radius: 6px;
+  background: #210e0b; color: #ffc2b7;
+  font: 0.88rem/1.45 var(--mono);
+  overflow-wrap: anywhere;
+}
+#error::before {
+  content: "!"; position: absolute; left: 14px; top: 10px;
+  width: 20px; height: 20px; display: grid; place-items: center;
+  border-radius: 4px; background: var(--stop); color: #2b0d07;
+  font: 800 0.8rem/1 var(--mono);
+}
+#error:empty { margin: 0; padding: 0; border: 0; height: 0; overflow: hidden; }
+
+/* ---------- layout ---------- */
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+  gap: clamp(18px, 2vw, 30px);
+  align-items: start;
+  padding-top: 18px;
+  padding-bottom: 40px;
+}
+.cpu, .timing { grid-column: 1 / -1; }
+/* same height side by side: the spare space goes above each card's last block */
+.game, .state { align-self: stretch; display: flex; flex-direction: column; }
+.glass { margin-bottom: 16px; }
+.scoreline { margin-top: auto; }
+.fields { flex: 1 0 auto; }  /* the table's rows share the spare height */
+section, details { min-width: 0; }
+.card { padding: 16px 18px 18px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); }
+
+.head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding-bottom: 9px; margin-bottom: 14px; border-bottom: 1px solid var(--border); }
+.ch { font: 700 0.72rem/1 var(--mono); color: var(--accent); letter-spacing: 0.08em; }
+h2 { margin: 0; font: 700 0.82rem/1.2 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; }
+.meta { margin-left: auto; font: 0.78rem/1.3 var(--mono); color: var(--muted); }
+.lbl { display: block; font: 600 0.7rem/1.2 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+[data-nil] { color: var(--dim) !important; }
+
+/* ---------- 01 game ---------- */
+.game { border-color: var(--border-hi); background: linear-gradient(var(--panel-hi), var(--panel)); }
+.glass { position: relative; background: var(--sky); outline: 1px solid var(--border-hi); }
+canvas { display: block; width: 100%; height: auto; aspect-ratio: 640 / 512; image-rendering: pixelated; }
+.overlay { position: absolute; inset: 0; display: none; place-content: center; justify-items: center; gap: 10px; padding: 24px; text-align: center; }
+.overlay .msg { font: 700 clamp(1rem, 1.6vw, 1.3rem)/1.2 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; }
+.overlay p { margin: 0; max-width: 34ch; color: var(--label); font-size: 0.92rem; }
+.overlay kbd { font: 700 0.8em var(--mono); padding: 2px 7px; border: 1px solid var(--accent); border-radius: 4px; color: var(--accent); }
+.ov-stopped .msg { color: var(--label); }
+.ov-booting .msg { color: var(--warn); }
+.ov-booting svg rect { animation: blink 0.9s steps(2, jump-none) infinite; }
+body:has(#phase[data-phase="stopped"]) .ov-stopped,
+body:has(#phase[data-phase="booting"]) .ov-booting { display: grid; }
+
+.scoreline { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 1.4fr); border-top: 1px solid var(--border); }
+.scoreline > div { padding: 12px 16px 0; border-left: 1px solid var(--border); min-width: 0; }
+.scoreline > div:first-child { border-left: 0; padding-left: 0; }
+.scoreline > div > b { display: block; font: 700 clamp(2.4rem, 4vw, 3.6rem)/1.05 var(--mono); white-space: nowrap; }
+#score { color: var(--square); }
+.who { align-self: center; font-size: 0.85rem; color: var(--muted); }
+.who .bot-on b { color: var(--aim); font-weight: 600; }
+.who .bot-off { display: none; color: #ffe68a; }
+body:has(#bot:not(:checked)) .who .bot-on { display: none; }
+body:has(#bot:not(:checked)) .who .bot-off { display: block; }
+.who p { margin: 0; }
+
+/* ---------- 02 game state ---------- */
+.code {
+  margin: 0 0 14px; padding: 12px 14px;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--well);
+  font: 0.88rem/1.65 var(--mono); color: var(--text);
+  white-space: pre; overflow-x: auto;
+}
+.code .c { color: var(--dim); }
+.code .k { color: var(--aim); }
+.code .n { color: var(--square); }
+.inputline { display: flex; align-items: center; gap: 12px; margin: -4px 0 14px; }
+#fire {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 12px 5px 10px;
+  border: 1px solid var(--border-hi); border-radius: 4px;
+  font: 800 0.78rem/1 var(--mono); letter-spacing: 0.16em;
+  color: var(--dim); background: var(--panel-hi);
+}
+#fire::before { content: ""; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid currentColor; }
+#fire[data-on="true"] { color: #2b0d07; background: var(--stop); border-color: var(--stop); }
+#fire[data-on="true"]::before { background: #2b0d07; border-color: #2b0d07; }
+body:has(#bot:not(:checked)) #fire { border-style: dashed; background: transparent; color: var(--dim); }
+body:has(#bot:not(:checked)) #fire::before { background: transparent; border-color: currentColor; }
+.inputline .hint { font-size: 0.8rem; color: var(--muted); }
+.inputline .hint .off { display: none; }
+body:has(#bot:not(:checked)) .inputline .hint .on { display: none; }
+body:has(#bot:not(:checked)) .inputline .hint .off { display: inline; }
+
+.dump { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--well); font: 1rem/1 var(--mono); overflow-x: auto; }
+.dump .row { display: flex; align-items: center; gap: 0; height: 1.9rem; white-space: nowrap; }
+.dump .addr { width: 7ch; flex: none; color: var(--dim); font-size: 0.8rem; }
+.dump .b { width: 2.9ch; flex: none; text-align: center; padding: 3px 0; border-radius: 3px; cursor: default; }
+/* same columns on every line: one gap after the 4th byte (span 1 is the address) */
+.dump .b:nth-of-type(6) { margin-left: 1.2ch; }
+.caption { margin: 8px 0 14px; min-height: 1.3em; font: 0.78rem/1.3 var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.f-sig { --c: var(--f-minor); } .f-mode { --c: var(--f-mode); } .f-score { --c: var(--f-score); }
+.f-y { --c: var(--f-y); } .f-speed { --c: var(--f-speed); } .f-gatex { --c: var(--f-gatex); }
+.f-gap { --c: var(--f-gap); } .f-best { --c: var(--f-best); } .f-fy, .f-seed, .f-btn, .f-pad, .f-wait { --c: var(--f-minor); }
+.dump .b { color: var(--c); }
+.dump .b.hl { background: color-mix(in srgb, var(--c) 24%, transparent); box-shadow: inset 0 0 0 1px var(--c); color: var(--text); }
+
+.fields { width: 100%; border-collapse: collapse; table-layout: fixed; font: 0.88rem/1 var(--mono); }
+.fields col.c-off { width: 4.5em; }
+.fields col.c-hex { width: 9.5em; }
+.fields col.c-val { width: 42%; }
+.fields th { height: 1.9rem; padding: 0 8px; text-align: left; font: 600 0.68rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border-hi); }
+.fields td { height: 2rem; padding: 0 8px; border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fields th:first-child, .fields td:first-child { padding-left: 4px; }
+.fields td.off { color: var(--dim); font-size: 0.78rem; }
+.fields td.name { color: var(--text); font-family: var(--sans); font-weight: 600; }
+.fields td.name::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 2px; background: var(--c); vertical-align: 1px; }
+.fields td.hex { color: var(--c); font-size: 0.8rem; }
+.fields td.val { color: var(--text); font-weight: 600; }
+.fields tr[data-f] { cursor: default; }
+.fields tr[data-f]:focus-visible { outline-offset: -2px; }
+.fields tr.hl td { background: color-mix(in srgb, var(--c) 16%, transparent); }
+.fields tr.hl td:first-child { box-shadow: inset 3px 0 0 var(--c); }
+
+/* ---------- 03 cpu ---------- */
+.cpu-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.5fr) minmax(0, 1.1fr); gap: 0; }
+.cpu-grid > div { padding: 0 20px; border-left: 1px solid var(--border); min-width: 0; }
+.cpu-grid > div:first-child { padding-left: 0; border-left: 0; }
+#pc { display: inline-block; margin-top: 8px; padding: 0 4px; margin-left: -4px; border-radius: 4px; font: 700 clamp(1.6rem, 2.4vw, 2.2rem)/1.1 var(--mono); color: var(--aim); }
+.pc-note { margin: 8px 0 0; font-size: 0.8rem; color: var(--muted); }
+.regs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; margin-top: 8px; font: 0.92rem/1 var(--mono); }
+.r { display: flex; align-items: center; gap: 10px; height: 1.75rem; white-space: nowrap; }
+.r .rn { width: 2ch; color: var(--muted); font-weight: 700; }
+.r .rv { color: var(--text); padding: 2px 3px; margin: -2px -3px; border-radius: 3px; }
+.r .tag { font-size: 0.72rem; color: var(--f-gap); visibility: hidden; }
+.r .tag[data-on="true"] { visibility: visible; }
+#sr { display: inline-block; margin-top: 8px; padding: 0 4px; margin-left: -4px; border-radius: 4px; font: 700 1.3rem/1.1 var(--mono); }
+.leds { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.led {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-width: 2.2rem; height: 2rem; padding: 0 8px;
+  border: 1px solid var(--border-hi); border-radius: 4px;
+  font: 700 0.8rem/1 var(--mono); color: var(--dim); background: var(--well);
+}
+.led[data-on="true"] { color: #04241a; background: var(--accent); border-color: var(--accent); }
+.led.ipl { color: var(--muted); }
+.led.ipl b { color: var(--text); }
+.legend { margin: 10px 0 0; font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+.legend b { display: inline-block; min-width: 3.5ch; font: 700 0.78rem var(--mono); color: var(--text); }
+
+/* ---------- 04 link timing ---------- */
+.timing { border: 1px solid var(--border); border-radius: 10px; background: var(--panel); }
+.timing summary {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
+  padding: 14px 18px; cursor: pointer; list-style: none;
+  border-radius: 10px;
+}
+.timing summary::-webkit-details-marker { display: none; }
+.timing summary::before { content: ""; align-self: center; width: 0; height: 0; border: 5px solid transparent; border-left-color: var(--muted); border-right-width: 0; margin-right: 2px; }
+.timing[open] summary::before { transform: rotate(90deg); }
+.timing summary:hover h2 { color: var(--accent); }
+.timing .sum { font: 0.82rem/1.3 var(--mono); color: var(--muted); }
+.timing .sum b { color: var(--text); font-weight: 600; display: inline-block; min-width: 3ch; text-align: right; }
+.tbody { padding: 0 18px 16px; }
+.tgrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--border); }
+.tgrid > div { padding: 12px 14px 0; border-left: 1px solid var(--border); min-width: 0; }
+.tgrid > div:first-child { padding-left: 0; border-left: 0; }
+.tv { display: flex; align-items: baseline; gap: 6px; margin-top: 6px; font: 600 1.2rem/1 var(--mono); }
+.tv b { font-weight: 600; min-width: 3ch; text-align: right; }
+.tv .u { font-size: 0.78rem; color: var(--muted); }
+.ref { margin: 14px 0 0; font: 0.78rem/1.4 var(--mono); color: var(--muted); }
+
+/* ---------- one column below 960 px ---------- */
+@media (max-width: 960px) {
+  main { grid-template-columns: minmax(0, 1fr); }
+  .cpu-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .cpu-grid > div { padding: 16px 0 0; border-left: 0; border-top: 1px solid var(--border); }
+  .cpu-grid > div:first-child { padding-top: 0; border-top: 0; }
+  .bar { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .scoreline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .scoreline > .who { grid-column: 1 / -1; border-left: 0; padding-left: 0; }
+  .regs { grid-template-columns: minmax(0, 1fr); }
+  .tgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 12px; }
+  .tgrid > div:nth-child(odd) { border-left: 0; padding-left: 0; }
+  .fields col.c-hex { width: 0; }
+  .fields .hex { display: none; }
+  .dump { font-size: 0.9rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; }
+}
+</style>
+</head>
+<body>
+<header class="bar wrap">
+  <div class="lead">
+  <div class="brand">
+    <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+      <rect x="0.5" y="0.5" width="33" height="33" rx="6" fill="#001d3a" stroke="#2f3d51"/>
+      <rect x="22" y="0.5" width="5" height="10" fill="#22dd88"/>
+      <rect x="22" y="22" width="5" height="11.5" fill="#22dd88"/>
+      <rect x="8" y="13" width="7" height="6" fill="#ffdd00"/>
+      <path d="M4 16.5h24" stroke="#6fb6ff" stroke-width="1" stroke-dasharray="2 2"/>
+    </svg>
+    <div>
+      <h1>Pulse</h1>
+      <p class="tagline">LinkUAE: <b>external control of a running Amiga, frame by frame</b></p>
+    </div>
+  </div>
+  </div>
+  <div class="side">
+  <span id="phase" data-phase="stopped">Stopped</span>
+  <div class="controls">
+    <label class="switch"><input type="checkbox" id="bot" checked> Bot plays</label>
+    <button id="start" type="button">
+      <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z" fill="currentColor"/></svg>
+      Start
+    </button>
+    <button id="stop" type="button" disabled>
+      <svg width="11" height="11" viewBox="0 0 11 11" aria-hidden="true"><rect width="11" height="11" rx="1" fill="currentColor"/></svg>
+      Stop
+    </button>
+  </div>
+  </div>
+</header>
+<div class="wrap"><div id="error" role="alert"></div></div>
+
+<main class="wrap">
+  <section class="card game" aria-labelledby="h-game">
+    <div class="head">
+      <span class="ch">01</span>
+      <h2 id="h-game">Game</h2>
+    </div>
+    <div class="glass">
+      <canvas id="game" width="640" height="512" aria-label="Game entities, drawn from the emulator's memory"></canvas>
+      <div class="overlay ov-stopped">
+        <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="4" fill="none" stroke="#c6d4e6" stroke-dasharray="4 4"/><path d="M16 13l12 7-12 7z" fill="#2dd889"/></svg>
+        <span class="msg">Link idle</span>
+        <p>Press <kbd>Start</kbd> to boot WinUAE and open the shared-memory link.</p>
+      </div>
+      <div class="overlay ov-booting">
+        <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect x="14" y="14" width="12" height="12" fill="#ffc94a"/></svg>
+        <span class="msg">Booting WinUAE</span>
+        <p>Waiting for the game to be ready.</p>
+      </div>
+    </div>
+    <div class="scoreline">
+      <div><span class="lbl">Score</span><b id="score" data-nil>–</b></div>
+      <div><span class="lbl">Best</span><b id="best" data-nil>–</b></div>
+      <div class="who">
+        <p class="bot-on"><b>Bot plays.</b> Each frame it reads Game state and decides whether to press fire.</p>
+        <p class="bot-off">With the bot off, play in the WinUAE window with the left mouse button.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card state" id="state" aria-labelledby="h-state">
+    <div class="head">
+      <span class="ch">02</span>
+      <h2 id="h-state">Game state</h2>
+    </div>
+<pre class="code"><span class="k">frame</span>.read(<span class="n">0x60000</span>, <span class="n">34</span>)        <span class="c"># read the game's memory</span>
+<span class="k">link</span>.joy(<span class="n">1</span>, fire=press)        <span class="c"># send input</span>
+<span class="k">link</span>.step()                    <span class="c"># run the next frame</span></pre>
+    <div class="inputline">
+      <span class="lbl">Bot input</span>
+      <span id="fire" data-on="false">FIRE</span>
+      <span class="hint"><span class="on">lit when the bot presses on this frame</span><span class="off">inactive: the bot is off</span></span>
+    </div>
+    <div class="dump" id="dump" aria-label="The 34 bytes of the state block, in hexadecimal"></div>
+    <p class="caption" id="state-msg">No data: the demo is not running.</p>
+    <table class="fields">
+      <colgroup><col class="c-off"><col><col class="c-hex"><col class="c-val"></colgroup>
+      <thead><tr><th>Off</th><th>Field</th><th class="hex">Bytes</th><th>Value</th></tr></thead>
+      <tbody id="fields-main"></tbody>
+    </table>
+  </section>
+
+  <section class="card cpu" aria-labelledby="h-cpu">
+    <div class="head">
+      <span class="ch">03</span>
+      <h2 id="h-cpu">CPU</h2>
+    </div>
+    <div class="cpu-grid">
+      <div>
+        <span class="lbl">PC · program counter</span>
+        <b id="pc" data-nil>–</b>
+        <p class="pc-note">Address of the next instruction.</p>
+      </div>
+      <div>
+        <span class="lbl">Data and address registers</span>
+        <div class="regs">
+          <div>
+            <div class="r"><span class="rn">D0</span><span class="rv" id="d0" data-nil>–</span></div>
+            <div class="r"><span class="rn">D1</span><span class="rv" id="d1" data-nil>–</span></div>
+            <div class="r"><span class="rn">D2</span><span class="rv" id="d2" data-nil>–</span></div>
+            <div class="r"><span class="rn">D3</span><span class="rv" id="d3" data-nil>–</span></div>
+            <div class="r"><span class="rn">D4</span><span class="rv" id="d4" data-nil>–</span></div>
+            <div class="r"><span class="rn">D5</span><span class="rv" id="d5" data-nil>–</span></div>
+            <div class="r"><span class="rn">D6</span><span class="rv" id="d6" data-nil>–</span></div>
+            <div class="r"><span class="rn">D7</span><span class="rv" id="d7" data-nil>–</span></div>
+          </div>
+          <div>
+            <div class="r"><span class="rn">A0</span><span class="rv" id="a0" data-nil>–</span></div>
+            <div class="r"><span class="rn">A1</span><span class="rv" id="a1" data-nil>–</span></div>
+            <div class="r"><span class="rn">A2</span><span class="rv" id="a2" data-nil>–</span></div>
+            <div class="r"><span class="rn">A3</span><span class="rv" id="a3" data-nil>–</span></div>
+            <div class="r"><span class="rn">A4</span><span class="rv" id="a4" data-nil>–</span><span class="tag" id="a4-tag" data-on="false">→ game state</span></div>
+            <div class="r"><span class="rn">A5</span><span class="rv" id="a5" data-nil>–</span></div>
+            <div class="r"><span class="rn">A6</span><span class="rv" id="a6" data-nil>–</span></div>
+            <div class="r"><span class="rn">A7</span><span class="rv" id="a7" data-nil>–</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <span class="lbl">SR · status register</span>
+        <b id="sr" data-nil>–</b>
+        <div class="leds">
+          <span class="led" id="sr-s" data-on="false" title="Supervisor mode">S</span>
+          <span class="led ipl" title="Interrupt mask, 0 to 7">IPL <b id="sr-ipl" data-nil>–</b></span>
+          <span class="led" id="sr-x" data-on="false" title="Extend">X</span>
+          <span class="led" id="sr-n" data-on="false" title="Negative">N</span>
+          <span class="led" id="sr-z" data-on="false" title="Zero">Z</span>
+          <span class="led" id="sr-v" data-on="false" title="Overflow">V</span>
+          <span class="led" id="sr-c" data-on="false" title="Carry">C</span>
+        </div>
+        <p class="legend"><b>S</b> supervisor<br><b>IPL</b> interrupt mask<br><b>X</b> extend<br><b>N</b> negative<br><b>Z</b> zero<br><b>V</b> overflow<br><b>C</b> carry</p>
+      </div>
+    </div>
+  </section>
+
+  <details class="timing">
+    <summary>
+      <h2>Link timing</h2>
+      <span class="sum">publish to client <b id="latency-sum" data-nil>–</b> µs · timeouts <b id="timeouts-sum" data-nil>–</b></span>
+    </summary>
+    <div class="tbody">
+      <div class="tgrid">
+        <div><span class="lbl">Publish to client</span><div class="tv"><b id="latency" data-nil>–</b><span class="u">µs</span></div></div>
+        <div><span class="lbl">Client, per frame</span><div class="tv"><b id="client" data-nil>–</b><span class="u">µs</span></div></div>
+        <div><span class="lbl">Emulator publish</span><div class="tv"><b id="publish" data-nil>–</b><span class="u">µs</span></div></div>
+        <div><span class="lbl">Longest wait</span><div class="tv"><b id="maxwait" data-nil>–</b><span class="u">µs</span></div></div>
+        <div><span class="lbl">Timeouts</span><div class="tv"><b id="timeouts" data-nil>–</b></div></div>
+      </div>
+      <p class="ref">For scale: one PAL frame lasts 20 000 µs.</p>
+    </div>
+  </details>
+</main>
+<script src="/panel.js"></script>
+</body>
+</html>
+

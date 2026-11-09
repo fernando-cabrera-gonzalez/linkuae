@@ -1,0 +1,5 @@
+build/out/
+python/build/
+build/*.log
+__pycache__/
+*.egg-info/
