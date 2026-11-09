@@ -7,7 +7,6 @@ import argparse
 import json
 import os
 import socket
-import statistics
 import subprocess
 import sys
 import threading
@@ -28,7 +27,6 @@ STREAM_SECONDS = 0.02                                                   # how of
 FRAME_WAIT = 1.0                                                        # seconds to wait for a frame before checking the emulator
 CONNECT_SECONDS = 20.0                                                  # time the emulator gets to create the shared block
 STOP_SECONDS = 5.0                                                      # time the worker and the emulator get to finish
-LATENCY_SAMPLES = 50                                                    # frames in the latency and client time figures
 # registers to show
 CUSTOM_REGS = [(0x002, "DMACONR"), (0x004, "VPOSR"), (0x006, "VHPOSR"),
                (0x00A, "JOY0DAT"), (0x00C, "JOY1DAT"), (0x00E, "CLXDAT"),
@@ -55,9 +53,8 @@ def raw_state(frame):
         return ""                                                       # the page says so
 
 
-def debug_snapshot(frame, link, latencies, client_times):
+def debug_snapshot(frame):
     """The emulator's state on this frame."""
-    stats = link.stats()                                                # counters kept by the server side of LinkUAE
     return {
         "frame": frame.number,                                          # frames published
         "vsync": frame.vsync,                                           # emulated vertical blanks
@@ -73,11 +70,6 @@ def debug_snapshot(frame, link, latencies, client_times):
         "vbr": frame.vbr,                                               # vector base
         "custom": [[n, frame.custom_word(r)] for r, n in CUSTOM_REGS],  # chip registers
         "state": raw_state(frame),                                      # the game's raw state block
-        "latency_us": statistics.median(latencies),                     # publish to client, median
-        "client_us": statistics.median(client_times),                   # time this process takes per frame
-        "max_wait_us": stats["max_wait_us"],                            # longest the emulator has waited for us
-        "publish_us": stats["publish_us"],                              # time the emulator takes to publish
-        "timeouts": stats["timeouts"],                                  # replies that took too long
     }
 
 
@@ -184,10 +176,8 @@ class Demo:
         link.set_windows([(bot.STATE, bot.STATE_BYTES)])                # the game's state block
         pressed, last_mode, games, count = False, None, 0, 0            # what it remembers
         fired = False                                                   # a press since the last update: they last one frame
-        latencies, client_times = [], []                                # recent timings
         while not self.quit.is_set():                                   # until the Stop button
             frame = link.wait_frame(timeout=FRAME_WAIT)                 # the emulator is stopped until step()
-            started = time.perf_counter()                               # our share of the frame starts now
             if frame is None:                                           # paused from its own window, or killed
                 if emulator.poll() is not None:                         # it has gone
                     return                                              # end of the run
@@ -214,20 +204,16 @@ class Demo:
             link.joy(bot.PORT, fire=press)                              # queue the button
             pressed = press                                             # remember it
             fired = fired or press                                      # the panel only sees every other frame
-            # keep the recent ones
-            latencies = (latencies + [frame.latency_us])[-LATENCY_SAMPLES:]
             count += 1                                                  # one more frame
-            if count % SNAPSHOT_FRAMES == 0 and client_times:           # time for a panel update
+            if count % SNAPSHOT_FRAMES == 0:                            # time for a panel update
                 # the emulator's state
-                debug = debug_snapshot(frame, link, latencies, client_times)
+                debug = debug_snapshot(frame)
                 phase = "running" if game else "booting"                # the signature tells
                 if game:                                                # report presses from skipped frames too
                     game["press"] = fired
                 fired = False                                           # counted from here again
                 # send it out
                 self.publish(phase=phase, game=game, debug=debug, games=games)
-            spent = (time.perf_counter() - started) * 1e6               # microseconds of this frame
-            client_times = (client_times + [spent])[-LATENCY_SAMPLES:]  # keep the recent ones
             link.step()                                                 # answer: the emulator runs the next frame
 
 

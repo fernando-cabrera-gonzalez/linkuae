@@ -138,7 +138,7 @@ main {
   padding-top: 18px;
   padding-bottom: 40px;
 }
-.cpu, .timing { grid-column: 1 / -1; }
+.cpu { grid-column: 1 / -1; }
 /* same height side by side: the spare space goes above each card's last block */
 .game, .state { align-self: stretch; display: flex; flex-direction: column; }
 .glass { margin-bottom: 16px; }
@@ -265,28 +265,6 @@ body:has(#bot:not(:checked)) .inputline .hint .off { display: inline; }
 .legend { margin: 10px 0 0; font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
 .legend b { display: inline-block; min-width: 3.5ch; font: 700 0.78rem var(--mono); color: var(--text); }
 
-/* ---------- 04 link timing ---------- */
-.timing { border: 1px solid var(--border); border-radius: 10px; background: var(--panel); }
-.timing summary {
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
-  padding: 14px 18px; cursor: pointer; list-style: none;
-  border-radius: 10px;
-}
-.timing summary::-webkit-details-marker { display: none; }
-.timing summary::before { content: ""; align-self: center; width: 0; height: 0; border: 5px solid transparent; border-left-color: var(--muted); border-right-width: 0; margin-right: 2px; }
-.timing[open] summary::before { transform: rotate(90deg); }
-.timing summary:hover h2 { color: var(--accent); }
-.timing .sum { font: 0.82rem/1.3 var(--mono); color: var(--muted); }
-.timing .sum b { color: var(--text); font-weight: 600; display: inline-block; min-width: 3ch; text-align: right; }
-.tbody { padding: 0 18px 16px; }
-.tgrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--border); }
-.tgrid > div { padding: 12px 14px 0; border-left: 1px solid var(--border); min-width: 0; }
-.tgrid > div:first-child { padding-left: 0; border-left: 0; }
-.tv { display: flex; align-items: baseline; gap: 6px; margin-top: 6px; font: 600 1.2rem/1 var(--mono); }
-.tv b { font-weight: 600; min-width: 3ch; text-align: right; }
-.tv .u { font-size: 0.78rem; color: var(--muted); }
-.ref { margin: 14px 0 0; font: 0.78rem/1.4 var(--mono); color: var(--muted); }
-
 /* ---------- one column below 960 px ---------- */
 @media (max-width: 960px) {
   main { grid-template-columns: minmax(0, 1fr); }
@@ -299,8 +277,6 @@ body:has(#bot:not(:checked)) .inputline .hint .off { display: inline; }
   .scoreline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .scoreline > .who { grid-column: 1 / -1; border-left: 0; padding-left: 0; }
   .regs { grid-template-columns: minmax(0, 1fr); }
-  .tgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 12px; }
-  .tgrid > div:nth-child(odd) { border-left: 0; padding-left: 0; }
   .fields col.c-hex { width: 0; }
   .fields .hex { display: none; }
   .dump { font-size: 0.9rem; }
@@ -447,23 +423,6 @@ body:has(#bot:not(:checked)) .inputline .hint .off { display: inline; }
       </div>
     </div>
   </section>
-
-  <details class="timing">
-    <summary>
-      <h2>Link timing</h2>
-      <span class="sum">publish to client <b id="latency-sum" data-nil>–</b> µs · timeouts <b id="timeouts-sum" data-nil>–</b></span>
-    </summary>
-    <div class="tbody">
-      <div class="tgrid">
-        <div><span class="lbl">Publish to client</span><div class="tv"><b id="latency" data-nil>–</b><span class="u">µs</span></div></div>
-        <div><span class="lbl">Client, per frame</span><div class="tv"><b id="client" data-nil>–</b><span class="u">µs</span></div></div>
-        <div><span class="lbl">Emulator publish</span><div class="tv"><b id="publish" data-nil>–</b><span class="u">µs</span></div></div>
-        <div><span class="lbl">Longest wait</span><div class="tv"><b id="maxwait" data-nil>–</b><span class="u">µs</span></div></div>
-        <div><span class="lbl">Timeouts</span><div class="tv"><b id="timeouts" data-nil>–</b></div></div>
-      </div>
-      <p class="ref">For scale: one PAL frame lasts 20 000 µs.</p>
-    </div>
-  </details>
 </main>
 <script src="/panel.js"></script>
 </body>

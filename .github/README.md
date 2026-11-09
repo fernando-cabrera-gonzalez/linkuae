@@ -53,9 +53,7 @@ The [**Pulse**](../linkuae/demos/pulse/README.md) demo is a tiny original game t
 3. Double-click `start_demo.cmd`.
 4. Watch the bot play at `http://127.0.0.1:8765/`, or switch it off and play yourself.
 
-<!-- Screenshot of the panel: save it as .github/assets/pulse-panel.png and uncomment.
-<p align="center"><img src="assets/pulse-panel.png" alt="Pulse demo: game, bot view and live CPU state" width="85%"></p>
--->
+<p align="center"><img src="assets/pulse-panel.png" alt="Pulse demo: game, bot view and live CPU state" width="60%"></p>
 
 <a id="how-it-works"></a>
 

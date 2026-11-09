@@ -30,7 +30,7 @@ A square falls, each button press pushes it up, and barriers with a gap come fro
 |---|---|
 | 🎮 **The game** | `pulse.s`, 68000 assembly, 1012 bytes at most. It takes over the machine and draws with hardware sprites. |
 | 🤖 **The bot** | `bot.py`: reads one 34-byte block of the game's memory each frame and answers with the fire button. |
-| 📊 **The panel** | `panel.py` + a web page: the game drawn from its state, the raw bytes, the CPU registers and the timing. |
+| 📊 **The panel** | `panel.py` + a web page: the game drawn from its state, the raw bytes and the CPU registers. |
 
 > [!NOTE]
 > It needs **no Kickstart and no Workbench**: it boots on the AROS ROM built into WinUAE, with the configuration in `pulse.uae`.
@@ -83,9 +83,7 @@ Without `--start`, the panel waits for its **Start** button.
 
 ## 📊 The panel
 
-<!-- Screenshot of the panel: save it as ../../../.github/assets/pulse-panel.png and uncomment.
-<p align="center"><img src="../../../.github/assets/pulse-panel.png" alt="Pulse demo: game, bot view and live CPU state" width="85%"></p>
--->
+<p align="center"><img src="../../../.github/assets/pulse-panel.png" alt="Pulse demo: game, bot view and live CPU state" width="60%"></p>
 
 | Section | Shows |
 |---|---|
