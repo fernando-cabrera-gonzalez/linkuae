@@ -1,7 +1,8 @@
 """A local web panel for the Pulse demo: start and stop it, watch the game's entities and debug the emulator.
 This process is the only LinkUAE client: two clients on one emulator would interfere with each other.
 
-  python panel.py path\\to\\winuae64.exe [--port 8765] [--no-browser] [--start]
+  python panel.py [path\\to\\winuae64.exe] [--start] [--port 8765] [--no-browser]
+The emulator is the argument, else the WINUAE environment variable, else linkuae\\build\\out\\winuae64.exe.
 """
 import argparse
 import json
@@ -20,6 +21,7 @@ from linkuae import EmulatorGone, Link, emulator_present                # bot.py
 HERE = os.path.dirname(os.path.abspath(__file__))                       # this folder
 CONFIG = os.path.join(HERE, "pulse.uae")                                # emulator configuration
 DISK = os.path.join(HERE, "pulse.adf")                                  # game disk
+DEFAULT_EXE = os.path.join(HERE, "..", "..", "build", "out", "winuae64.exe")   # where build.cmd leaves it
 FILES = {"/": ("panel.html", "text/html"),                              # what the browser may ask for
          "/panel.js": ("panel.js", "text/javascript"),
          "/button.png": ("button.png", "image/png")}
@@ -28,6 +30,19 @@ STREAM_SECONDS = 0.02                                                   # how of
 FRAME_WAIT = 1.0                                                        # seconds to wait for a frame before checking the emulator
 CONNECT_SECONDS = 20.0                                                  # time the emulator gets to create the shared block
 STOP_SECONDS = 5.0                                                      # time the worker and the emulator get to finish
+
+
+def find_winuae(given):
+    """The emulator to run and where its path came from: the argument, else the WINUAE environment variable, else
+    linkuae\\build\\out. Quotes around the path are dropped, and a folder means the winuae64.exe in it."""
+    for path, source in ((given, "the argument"), (os.environ.get("WINUAE"), "the WINUAE environment variable"),
+                         (DEFAULT_EXE, "the build folder")):
+        path = (path or "").strip().strip('"')
+        if path:
+            path = os.path.abspath(path)
+            if os.path.isdir(path):
+                path = os.path.join(path, "winuae64.exe")
+            return path, source
 
 
 def raw_state(frame):
@@ -279,7 +294,7 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     ap = argparse.ArgumentParser()                                      # command line
     # the emulator
-    ap.add_argument("winuae", help="path to a WinUAE built with LinkUAE")
+    ap.add_argument("winuae", nargs="?", help="path to a WinUAE built with LinkUAE (default: WINUAE, then linkuae\\build\\out)")
     # where
     ap.add_argument("--port", type=int, default=8765, help="local port of the panel")
     # for tests
@@ -287,13 +302,19 @@ def main():
     # as if Start were pressed
     ap.add_argument("--start", action="store_true", help="start the emulator right away")
     args = ap.parse_args()                                              # read it
+    exe, source = find_winuae(args.winuae)                              # the argument, WINUAE or the build
+    if not os.path.isfile(exe):                                         # say how to fix it, before anything opens
+        print(f"WinUAE with LinkUAE not found: {exe} (from {source})\n"
+              "Give its path as the first argument, set the WINUAE environment variable to it, "
+              "or build it with linkuae\\build\\build.cmd", flush=True)
+        return 1
 
-    Handler.demo = Demo(args.winuae)                                    # shared by all requests
+    Handler.demo = Demo(exe)                                            # shared by all requests
     try:
         server = PanelServer(("127.0.0.1", args.port), Handler)         # this machine only
     except OSError:                                                     # usually another panel already on it
         print(f"port {args.port} is busy: is another panel running? Close it or use --port", flush=True)
-        return 1                                                        # the batch file pauses on this
+        return 1
     server.daemon_threads = True                                        # open streams do not hold the exit
     url = f"http://127.0.0.1:{args.port}/"                              # the panel's address
     print(f"Pulse panel at {url} (Ctrl+C to quit)", flush=True)         # say where

@@ -62,32 +62,30 @@ A square falls, each button press pushes it up, and barriers with a gap come fro
 > [!IMPORTANT]
 > Close any other WinUAE with LinkUAE enabled first: only one can be controlled, and `panel.py` must be its only client. A second panel on the same port refuses to start instead of fighting the first.
 
-Double-click **`start_demo.cmd`**. It starts the panel at `http://127.0.0.1:8765/` (reachable only from your machine), opens it in the browser and boots the game.
+```bat
+cd linkuae\demos\pulse
+python panel.py C:\Emulators\LinkUAE\winuae64.exe --start
+```
 
-### 📍 Pointing it at your WinUAE
+From a command prompt in the repository folder. Replace the example path with that of your `winuae64.exe` (in quotes if it has spaces), or leave it out if you built the emulator or set `WINUAE` (see below). The panel opens at `http://127.0.0.1:8765/` (reachable only from your machine) and boots the game; the bot plays as soon as it is ready. Without `--start`, press **Start** in the panel.
 
-`start_demo.cmd` looks for the emulator in this order and takes the first that is set (if that one does not exist, it stops there instead of trying the next):
+### 📍 Where it finds WinUAE
+
+`panel.py` takes the first of these that is set (if that one does not exist, it says so and stops):
 
 | # | Where | Notes |
 |---|---|---|
-| 1 | Command-line argument | `start_demo.cmd path\to\winuae64.exe` |
-| 2 | `WINUAE_EXE` in the script | The line marked `EDIT HERE` |
-| 3 | `WINUAE` environment variable | |
-| 4 | `linkuae\build\out\winuae64.exe` | Where `build.cmd` leaves it: nothing to do if you built it |
+| 1 | First argument | `python panel.py C:\Emulators\LinkUAE\winuae64.exe` |
+| 2 | `WINUAE` environment variable | Set it once for every demo: `setx WINUAE "C:\Emulators\LinkUAE\winuae64.exe"` (then open a new console) |
+| 3 | `linkuae\build\out\winuae64.exe` | Where `build.cmd` leaves it: nothing to do if you built it |
 
-Downloaded it from Releases, or keep it elsewhere? Open `start_demo.cmd` in a text editor and write the full path:
+### ⚙️ Options
 
-```bat
-set "WINUAE_EXE=C:\Emulators\LinkUAE\winuae64.exe"
-```
-
-By hand:
-
-```bat
-python panel.py path\to\winuae64.exe --start
-```
-
-Without `--start`, the panel waits for its **Start** button.
+| Option | What it does |
+|---|---|
+| `--start` | Boots WinUAE right away instead of waiting for the **Start** button |
+| `--port N` | Local port of the panel (default 8765) |
+| `--no-browser` | Does not open the page |
 
 <a id="the-panel"></a>
 
@@ -165,7 +163,6 @@ It assembles the game, checks that it fits in the boot sector (1012 bytes), adds
 
 | File | What it is |
 |---|---|
-| `start_demo.cmd` | Starts everything: finds WinUAE and runs `panel.py --start` |
 | `panel.py` | Local web server: runs the emulator and the bot, and feeds the page |
 | `panel.html`, `panel.js`, `button.png` | The page and its fire button sprite |
 | `bot.py` | The bot's logic, and a bare console loop for an emulator that is already running |

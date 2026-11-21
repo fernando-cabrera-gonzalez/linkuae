@@ -48,9 +48,11 @@ class Player:
         frozen_now = snap == self.last_snap
         bombs, weapon = m.raw[b.BOMBS], m.raw[b.WEAPON]
         joy, fire = (False,) * 4, (n // 2) % 2 == 0
-        if self.last_bombs is not None and bombs != self.last_bombs:
-            self.say(n, f"bombs {self.last_bombs} -> {bombs}")
-        self.last_bombs = bombs
+        in_play = b.in_play(ship)                          # while the game loads, the RAM is not its data yet
+        if in_play:                                        # compared from one frame in play to the next: changes while out of play show later
+            if self.last_bombs is not None and bombs != self.last_bombs:
+                self.say(n, f"bombs {self.last_bombs} -> {bombs}")
+            self.last_bombs = bombs
         history = {a: self.history[-a] for a in range(1, len(self.history) + 1)}
         info = {}
         if active:
@@ -79,9 +81,10 @@ class Player:
             self.back_at = n
         dying = dead and not self.was_dead and ship        # a ship that is just not there is a transition
         self.was_dead = dead
-        if weapon != self.last_weapon:
-            self.say(n, f"weapon {WEAPON_NAMES.get(weapon, weapon)}")
-        self.last_weapon = weapon
+        if in_play:
+            if weapon != self.last_weapon:
+                self.say(n, f"weapon {WEAPON_NAMES.get(weapon, weapon)}")
+            self.last_weapon = weapon
         self.go_out = self.go_out + 1 if m.w(b.PLAYER) == 999 else 0
         if m.raw[b.LIVES] == 0 and self.go_out == b.GAME_OVER_FRAMES and not self.game_over:
             self.game_over = True

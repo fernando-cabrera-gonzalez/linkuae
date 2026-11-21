@@ -228,6 +228,12 @@ def solid(flags, kind):
     return (bool(flags) or kind in FLAGS0_SOLID) and kind not in EXPLOSION_KINDS and kind not in ITEM_KINDS
 
 
+def in_play(ship):
+    """The ship is in the area the bot steers it in (the same check as Brain.decide); before the game is in memory the
+    RAM holds anything, so log lines about bombs and weapons only count from here."""
+    return bool(ship) and X_MIN - STEP <= ship[0] <= X_MAX + STEP and Y_MIN - STEP <= ship[1] <= Y_MAX + 3 * STEP
+
+
 def on_screen(x, y):
     return X_MIN <= x <= X_MAX + SHIP_W and SCREEN_TOP <= y <= Y_MAX + SHIP_H + 20
 
@@ -771,9 +777,10 @@ def main():
                             a280_min = dd
                 joy, fire = (False,) * 4, (n // 2) % 2 == 0
                 bombs = m.raw[BOMBS]
-                if last_bombs is not None and bombs != last_bombs:
-                    say(f"[{n}] bombs {last_bombs} -> {bombs}", flush=True)
-                last_bombs = bombs
+                if in_play(ship):                                   # only real changes, not the RAM while the game loads
+                    if last_bombs is not None and bombs != last_bombs:
+                        say(f"[{n}] bombs {last_bombs} -> {bombs}", flush=True)
+                    last_bombs = bombs
                 info = {}
                 if bomb_at is not None:   # throwing a bomb: follow the circle
                     step = (n - bomb_at) // BOMB_STEP
@@ -827,9 +834,10 @@ def main():
                         say("     trace saved:", save_trace(trace, deaths, n), flush=True)
                 was_dead = dead
                 weapon = m.raw[WEAPON]
-                if weapon != last_weapon:
-                    say(f"[{n}] weapon {({v: k for k, v in COLOURS.items()}).get(weapon, weapon)}", flush=True)
-                last_weapon = weapon
+                if in_play(ship):
+                    if weapon != last_weapon:
+                        say(f"[{n}] weapon {({v: k for k, v in COLOURS.items()}).get(weapon, weapon)}", flush=True)
+                    last_weapon = weapon
                 if ship and not rec:
                     near = sorted([(round(x - ship[0] - 16), round(y - ship[1] - 15), "b") for x, y, _, _ in bullets] +
                                   [(round(e[0] - ship[0] - 16), round(e[1] - ship[1] - 15), f"e{i}") for i, e in enemies.items()],

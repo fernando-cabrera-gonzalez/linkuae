@@ -70,14 +70,36 @@ A ship flies up a scrolling battlefield, shooting air and ground enemies and dod
 
 ```bat
 cd linkuae\demos\battlesquadron
-python panel.py
+python panel.py C:\Emulators\LinkUAE\winuae64.exe --start
 ```
 
-The panel opens at `http://127.0.0.1:8765/` (reachable only from your machine). Press **Start**: WinUAE boots the game disk and the bot takes over as soon as the ship is on screen; start a game and watch it play. With `numba` installed, the panel first compiles the planner for a few seconds. Add `--start` to skip the button, or give the emulator's path as the first argument if it is not in `linkuae\build\out`.
+From a command prompt in the repository folder. Replace the example path with that of your `winuae64.exe` (in quotes if it has spaces), or leave it out if you built the emulator or set `WINUAE` (see below). The panel opens at `http://127.0.0.1:8765/` (reachable only from your machine) and boots the game disk; without `--start`, press **Start** in the panel. With `numba` installed, it first compiles the planner for a few seconds. Then start a game in the WinUAE window (cursor keys, right Ctrl fires): the bot takes over as soon as the ship is on screen. Until then the screen shows the game loading and its title.
+
+### 📍 Where it finds WinUAE
+
+`panel.py` takes the first of these that is set (if that one does not exist, it says so and stops):
+
+| # | Where | Notes |
+|---|---|---|
+| 1 | First argument | `python panel.py C:\Emulators\LinkUAE\winuae64.exe` |
+| 2 | `WINUAE` environment variable | Set it once for every demo: `setx WINUAE "C:\Emulators\LinkUAE\winuae64.exe"` (then open a new console) |
+| 3 | `linkuae\build\out\winuae64.exe` | Where `build.cmd` leaves it: nothing to do if you built it |
+
+### ⚙️ Options
+
+| Option | What it does |
+|---|---|
+| `--start` | Boots WinUAE right away instead of waiting for the **Start** button |
+| `--port N` | Local port of the panel (default 8765) |
+| `--no-browser` | Does not open the page |
+| `--state my_game.uss` | Starts from one of your savestates in this folder instead of booting the disk (see below) |
+| `--press-p` | Presses **P** once at the start, for a savestate saved with the game paused |
+| `--want orange` | Pick-up colour the bot goes for at start: `any` (default), `red`, `blue`, `green` or `orange` |
+| `--horizon N` | Game ticks the bot plans ahead (default 14) |
 
 The bot plays whatever is running in the emulator: you can also load a savestate or another copy of the game from WinUAE (**F12**) at any time, and after a reset or a savestate loaded there it starts over.
 
-**Savestates (optional).** To start right at a given point, put your `.uss` files in this folder and pick one in the panel's **Savestate** list, or give it with `--state my_game.uss`. Add `--press-p` if yours was saved with the game paused: the panel presses **P** once when it starts (that is how the game in the video was started).
+**Savestates (optional).** To start right at a given point, save one from WinUAE (**F12**, *Save State*) into this folder, then pick it in the panel's **Savestate** list or give it with `--state`. Add `--press-p` if you saved it with the game paused (that is how the game in the video was started).
 
 > [!TIP]
 > Want to place the WinUAE window first (for a recording, say)? Press **Start**, move the window, **Stop**, **Start** again: WinUAE remembers where it was, and every **Start** restarts the game from the very beginning.
@@ -115,5 +137,5 @@ The bot plays whatever is running in the emulator: you can also load a savestate
 | `player.py` | The bot driven frame by frame by the panel |
 | `bot.py` | The bot's brain (reading the RAM, planning, bombs), and a bare console loop for an emulator that is already running (`python bot.py --want orange --frames 100000`; it saves the RAM of the frames before each death and bomb in `deaths/`; `--no-ram-traces` turns that off) |
 | `plan_nb.py` | The planner's heavy part compiled with Numba, used when `numba` is installed (the same algorithm as the numpy code in `bot.py`) |
-| `restart.ps1` | Restarts WinUAE for the console loop: boots the disk, or a savestate with `-State my_game.uss`. It closes every running WinUAE first, without asking |
+| `restart.ps1` | Restarts WinUAE for the console loop: boots the disk, or a savestate with `-State my_game.uss`; `-Exe` defaults to `WINUAE`, then `linkuae\build\out`. It closes every running WinUAE first, without asking |
 | `bsquad.uae` | Emulator configuration: A500, 512 KB chip + 512 KB slow RAM, LinkUAE, `linkuae_wait` and `rndseed` (edit the ROM and disk paths) |

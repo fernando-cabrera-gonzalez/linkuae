@@ -45,14 +45,14 @@
 The [**Pulse**](../linkuae/demos/pulse/README.md) demo is a tiny original game that fits in a floppy's boot sector, a Python bot that plays it and a web panel showing what the bot reads and sends. It needs **no Kickstart and no Workbench** (it boots on WinUAE's built-in AROS ROM).
 
 1. Get this repository (clone it, or **Code → Download ZIP**) and install [Python](https://www.python.org/) 3.9+ on `PATH`. The demos and the Python client live here; Releases only has the emulator.
-2. Get `winuae64.exe` with LinkUAE from [**Releases**](https://github.com/fernando-cabrera-gonzalez/linkuae/releases/latest), or [build it](#build). The game disk, `pulse.adf`, comes ready-made: no assembler needed.
-3. Downloaded from Releases? Open `linkuae\demos\pulse\start_demo.cmd` in a text editor and write the exe's full path in the line marked `EDIT HERE`:
+2. Get `winuae64.exe` with LinkUAE from [**Releases**](https://github.com/fernando-cabrera-gonzalez/linkuae/releases/latest) (unzip it anywhere), or [build it](#build). The game disk, `pulse.adf`, comes ready-made: no assembler needed.
+3. Open a command prompt in the repository folder (with **Download ZIP** it is called `linkuae-master`) and start the panel, giving it the path of your `winuae64.exe`:
    ```bat
-   set "WINUAE_EXE=C:\Emulators\LinkUAE\winuae64.exe"
+   cd linkuae\demos\pulse
+   python panel.py C:\Emulators\LinkUAE\winuae64.exe --start
    ```
-   If you built it yourself, skip this step: it is found in `linkuae\build\out`.
-4. Double-click `start_demo.cmd`.
-5. Watch the bot play at `http://127.0.0.1:8765/`, or switch it off and play yourself.
+   Replace the example path with yours (in quotes if it has spaces), or leave it out if you built the emulator. To skip it from then on, set the `WINUAE` environment variable once: `setx WINUAE "C:\Emulators\LinkUAE\winuae64.exe"` (then open a new console: `setx` does not change the current one).
+4. Watch the bot play at `http://127.0.0.1:8765/`, or switch it off and play yourself.
 
 <p align="center"><img src="assets/pulse-panel.png" alt="Pulse demo: game, bot view and live CPU state" width="60%"></p>
 
@@ -147,7 +147,7 @@ Without `linkuae_wait` the emulator runs freely until the client attaches, so a 
 ## 🛠️ Build
 
 > [!TIP]
-> No need to build it yourself: a ready-to-run `winuae64.exe` is attached to each [release](https://github.com/fernando-cabrera-gonzalez/linkuae/releases/latest). Unzip it anywhere and write its path in `WINUAE_EXE` at the top of `start_demo.cmd`.
+> No need to build it yourself: a ready-to-run `winuae64.exe` is attached to each [release](https://github.com/fernando-cabrera-gonzalez/linkuae/releases/latest). Unzip it anywhere and give its path to `panel.py`, or set the `WINUAE` environment variable to it.
 
 | | |
 |---|---|

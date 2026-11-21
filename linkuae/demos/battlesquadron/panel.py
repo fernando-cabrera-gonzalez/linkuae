@@ -2,7 +2,9 @@
 and plans, and debug the emulator. This process is the only LinkUAE client: two clients on one emulator
 would interfere with each other, so the bot (bot.Player) runs inside it.
 
-  python panel.py [path\\to\\winuae64.exe] [--state my_game.uss] [--want orange] [--press-p] [--horizon N] [--port 8765] [--no-browser] [--start]
+  python panel.py [path\\to\\winuae64.exe] [--start] [--port 8765] [--no-browser]
+                  [--state my_game.uss] [--press-p] [--want orange] [--horizon N]
+The emulator is the argument, else the WINUAE environment variable, else linkuae\\build\\out\\winuae64.exe.
 """
 import argparse
 import json
@@ -23,7 +25,7 @@ from linkuae import EmulatorGone, Link, emulator_present                # bot.py
 
 HERE = os.path.dirname(os.path.abspath(__file__))                       # this folder
 CONFIG = os.path.join(HERE, "bsquad.uae")                               # emulator configuration
-DEFAULT_EXE = os.path.join(HERE, "..", "..", "build", "out", "winuae64.exe")
+DEFAULT_EXE = os.path.join(HERE, "..", "..", "build", "out", "winuae64.exe")   # where build.cmd leaves it
 STATES_DIR = HERE                                                       # the savestates to start from: your own .uss files in this folder
 FILES = {"/": ("panel.html", "text/html"),                              # what the browser may ask for
          "/panel.js": ("panel.js", "text/javascript"),
@@ -40,6 +42,19 @@ STOP_SECONDS = 5.0                                                      # time t
 def debug_snapshot(frame):
     """The 68000 registers on this frame, as the CPU card shows them."""
     return {"pc": frame.pc, "sr": frame.sr, "d": frame.d, "a": frame.a}
+
+
+def find_winuae(given):
+    """The emulator to run and where its path came from: the argument, else the WINUAE environment variable, else
+    linkuae\\build\\out. Quotes around the path are dropped, and a folder means the winuae64.exe in it."""
+    for path, source in ((given, "the argument"), (os.environ.get("WINUAE"), "the WINUAE environment variable"),
+                         (DEFAULT_EXE, "the build folder")):
+        path = (path or "").strip().strip('"')
+        if path:
+            path = os.path.abspath(path)
+            if os.path.isdir(path):
+                path = os.path.join(path, "winuae64.exe")
+            return path, source
 
 
 def list_states():
@@ -183,8 +198,9 @@ class Demo:
                 if emulator.poll() is not None:
                     return
                 continue
-            if n == 0 and frame.vsync > 1:                              # linkuae_wait holds the first frame for us: then it is vsync 1
-                print(f"[0] note: the emulator ran {frame.vsync - 1} frames before the bot attached (is linkuae_wait set?)", flush=True)
+            if n == 0:                                                  # linkuae_wait holds the first frame for us: then it is vsync 0 or 1
+                if frame.vsync > 1:
+                    print(f"[0] note: the bot attached at frame {frame.vsync} of the emulator, not at the first one (is linkuae_wait set?)", flush=True)
             elif frame.vsync <= last_vsync:                             # reset, or a savestate or game loaded from WinUAE: the count starts again
                 print(f"[{n}] the emulator was reset or loaded a savestate: the bot starts over", flush=True)
                 player, lost = self.new_player(), 0
@@ -296,15 +312,31 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("winuae", nargs="?", default=DEFAULT_EXE, help="path to a WinUAE built with LinkUAE")
+    ap.add_argument("winuae", nargs="?", help="path to a WinUAE built with LinkUAE (default: WINUAE, then linkuae\\build\\out)")
     ap.add_argument("--state", help="savestate to start from, a .uss file in " + STATES_DIR + " (optional; without it the disk in bsquad.uae boots)")
-    ap.add_argument("--horizon", type=int, default=bot.HORIZON, help="game ticks (2 frames each) the bot looks ahead")
+    ap.add_argument("--horizon", type=int, default=bot.HORIZON, help="game ticks (2 frames each) the bot plans ahead (default %d)" % bot.HORIZON)
     ap.add_argument("--port", type=int, default=8765, help="local port of the panel")
     ap.add_argument("--no-browser", action="store_true", help="do not open the page")
     ap.add_argument("--start", action="store_true", help="start the emulator right away")
-    ap.add_argument("--want", choices=list(WANTS), default="any", help="weapon colour the bot goes for at start (any by default; the page can change it)")
+    ap.add_argument("--want", choices=list(WANTS), default="any", help="pick-up colour the bot goes for at start (any by default; the page can change it)")
     ap.add_argument("--press-p", action="store_true", help="press P once when the game starts: for a savestate saved paused")
     args = ap.parse_args()
+    exe, source = find_winuae(args.winuae)
+    if not os.path.isfile(exe):                                         # say how to fix it, before anything opens
+        print(f"WinUAE with LinkUAE not found: {exe} (from {source})\n"
+              "Give its path as the first argument, set the WINUAE environment variable to it, "
+              "or build it with linkuae\\build\\build.cmd", flush=True)
+        return 1
+    try:
+        with open(CONFIG, encoding="utf-8", errors="replace") as f:
+            config = f.read()
+    except OSError as e:
+        print(f"cannot read {CONFIG}: {e}", flush=True)
+        return 1
+    if "<full path to your" in config:                                  # the ROM and disk placeholders are still there
+        print("bsquad.uae still has the placeholders: write the full paths to your Kickstart ROM and Battle Squadron disk in it",
+              flush=True)
+        return 1
     if args.state and args.state not in list_states():
         print(f"no such savestate in {STATES_DIR}: {args.state} (found: {', '.join(list_states()) or 'none'})", flush=True)
         return 1
@@ -317,7 +349,7 @@ def main():
     else:
         print("numba not installed: the planner runs on plain numpy (same algorithm, slower)", flush=True)
 
-    Handler.demo = Demo(args.winuae, args.state, args.want)
+    Handler.demo = Demo(exe, args.state, args.want)
     Handler.demo.press_p = args.press_p
     try:
         server = PanelServer(("127.0.0.1", args.port), Handler)         # this machine only
