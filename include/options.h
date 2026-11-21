@@ -570,6 +570,7 @@ struct uae_prefs {
 #ifdef WITH_LINKUAE
 	bool linkuae;
 	int linkuae_timeout;
+	int linkuae_wait;
 #endif
 	TCHAR debugging_options[MAX_DPATH];
 	bool start_gui;

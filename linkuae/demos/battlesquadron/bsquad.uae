@@ -1,0 +1,50 @@
+; Battle Squadron (Innerprise, 1989) for the LinkUAE bot: A500, 512K chip + 512K slow.
+config_description=Battle Squadron bot
+use_gui=no
+; EDIT THESE TWO LINES: the full paths to your own A500 Kickstart ROM (one suitable for the game) and Battle Squadron disk; neither is included
+kickstart_rom_file=<full path to your Kickstart ROM>
+floppy0=<full path to your Battle Squadron ADF>
+nr_floppies=1
+floppy0type=0
+floppy_speed=800
+cpu_type=68000
+cpu_speed=real
+chipset=ocs
+chipmem_size=1
+bogomem_size=2
+fastmem_size=0
+; sound settings for a slow PC: 11 kHz stereo and no interpolation (less to mix per frame, so no crackles), the A500 low-pass filter,
+; and a bigger buffer: LinkUAE makes the emulator wait for the bot every frame, a small buffer would crackle when the bot is slow
+sound_output=normal
+sound_channels=stereo
+sound_frequency=11025
+sound_interpol=none
+sound_filter=emul
+sound_filter_type=standard
+sound_stereo_separation=7
+sound_stereo_delay=0
+sound_max_buff=32768
+sound_auto=yes
+gfx_width_windowed=720
+gfx_height_windowed=568
+gfx_linemode=double
+linkuae=true
+linkuae_timeout=60000
+; hold the first frame after a start or a savestate until the bot attaches (up to 30 s): without it the emulator runs free for a
+; varying number of frames before the bot's frame 0, one source of differences between runs
+linkuae_wait=30000
+; fixed seed for WinUAE's random generator: by default it is seeded with the PC's clock, and the floppy uses it (disk position on
+; insert, drive-ready delay, random bits), another source of differences between runs
+rndseed=1
+; joystick on port 1 from the keyboard: cursor keys, right Ctrl fires (LinkUAE still drives it too)
+joyport1=kbd2
+joyport1autofire=none
+; F6: quick restore, reloads the savestate given with statefile= (restart.ps1)
+input.config=1
+input.1.keyboard.0.friendlyname=WinUAE keyboard
+input.1.keyboard.0.name=NULLKEYBOARD
+input.1.keyboard.0.empty=false
+input.1.keyboard.0.disabled=false
+input.1.keyboard.0.button.64.F6=SPC_STATERESTORE.0
+; F10: toggle warp mode
+input.1.keyboard.0.button.68.F10=SPC_WARP.0

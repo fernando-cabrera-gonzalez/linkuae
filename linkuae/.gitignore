@@ -3,3 +3,8 @@ python/build/
 build/*.log
 __pycache__/
 *.egg-info/
+# Battle Squadron demo: local bot output (deaths/, *.flag), private snapshots and savestates (they contain the game)
+demos/battlesquadron/deaths/
+demos/battlesquadron/*.flag
+demos/battlesquadron/reference/
+demos/battlesquadron/*.uss

@@ -1,7 +1,7 @@
 """A local web panel for the Pulse demo: start and stop it, watch the game's entities and debug the emulator.
 This process is the only LinkUAE client: two clients on one emulator would interfere with each other.
 
-  python panel.py path\\to\\winuae64.exe [--port 8765]
+  python panel.py path\\to\\winuae64.exe [--port 8765] [--no-browser] [--start]
 """
 import argparse
 import json
@@ -21,28 +21,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))                       # this f
 CONFIG = os.path.join(HERE, "pulse.uae")                                # emulator configuration
 DISK = os.path.join(HERE, "pulse.adf")                                  # game disk
 FILES = {"/": ("panel.html", "text/html"),                              # what the browser may ask for
-         "/panel.js": ("panel.js", "text/javascript")}
+         "/panel.js": ("panel.js", "text/javascript"),
+         "/button.png": ("button.png", "image/png")}
 SNAPSHOT_FRAMES = 2                                                     # frames per update of the panel: 25 per second
 STREAM_SECONDS = 0.02                                                   # how often each browser checks for an update
 FRAME_WAIT = 1.0                                                        # seconds to wait for a frame before checking the emulator
 CONNECT_SECONDS = 20.0                                                  # time the emulator gets to create the shared block
 STOP_SECONDS = 5.0                                                      # time the worker and the emulator get to finish
-# registers to show
-CUSTOM_REGS = [(0x002, "DMACONR"), (0x004, "VPOSR"), (0x006, "VHPOSR"),
-               (0x00A, "JOY0DAT"), (0x00C, "JOY1DAT"), (0x00E, "CLXDAT"),
-               (0x01C, "INTENAR"), (0x01E, "INTREQR"), (0x08E, "DIWSTRT"),
-               (0x090, "DIWSTOP"), (0x092, "DDFSTRT"), (0x094, "DDFSTOP"),
-               (0x100, "BPLCON0"), (0x102, "BPLCON1"), (0x104, "BPLCON2"),
-               (0x180, "COLOR00")]
-
-
-def sr_flags(sr):
-    """Status register as text: trace, supervisor, interrupt level and condition codes."""
-    trace = "T" if sr & 0x8000 else "-"                                 # trace bit
-    mode = "S" if sr & 0x2000 else "U"                                  # supervisor or user
-    pairs = zip("XNZVC", (16, 8, 4, 2, 1))                              # condition codes with their bits
-    ccr = "".join(c if sr & b else "-" for c, b in pairs)               # one letter per set flag
-    return f"{trace}{mode} IPL{(sr >> 8) & 7} {ccr}"                    # all together
 
 
 def raw_state(frame):
@@ -54,21 +39,12 @@ def raw_state(frame):
 
 
 def debug_snapshot(frame):
-    """The emulator's state on this frame."""
+    """The 68000 registers on this frame, as the CPU card shows them."""
     return {
-        "frame": frame.number,                                          # frames published
-        "vsync": frame.vsync,                                           # emulated vertical blanks
-        "beam": [frame.vpos, frame.hpos],                               # where the beam was
-        "cpu": frame.cpu_model,                                         # CPU model
         "pc": frame.pc,                                                 # program counter
         "sr": frame.sr,                                                 # status register
-        "flags": sr_flags(frame.sr),                                    # and as text
         "d": frame.d,                                                   # data registers
         "a": frame.a,                                                   # address registers
-        "usp": frame.usp,                                               # user stack
-        "isp": frame.isp,                                               # interrupt stack
-        "vbr": frame.vbr,                                               # vector base
-        "custom": [[n, frame.custom_word(r)] for r, n in CUSTOM_REGS],  # chip registers
         "state": raw_state(frame),                                      # the game's raw state block
     }
 
@@ -117,7 +93,7 @@ class Demo:
                 return error                                            # and do not start
             self.quit.clear()                                           # a new run
             # clean state
-            self.publish(phase="booting", error=None, game=None, debug=None, games=0)
+            self.publish(phase="booting", error=None, game=None, debug=None)
             # the worker
             self.thread = threading.Thread(target=self.run, daemon=True)
             self.thread.start()                                         # off it goes
@@ -174,7 +150,7 @@ class Demo:
     def play(self, link, emulator):
         """One pass per frame: read, decide, answer. Stays short because the Amiga waits for it."""
         link.set_windows([(bot.STATE, bot.STATE_BYTES)])                # the game's state block
-        pressed, last_mode, games, count = False, None, 0, 0            # what it remembers
+        pressed, count = False, 0                                       # what it remembers
         fired = False                                                   # a press since the last update: they last one frame
         while not self.quit.is_set():                                   # until the Stop button
             frame = link.wait_frame(timeout=FRAME_WAIT)                 # the emulator is stopped until step()
@@ -194,9 +170,6 @@ class Demo:
                 if bot_on:                                              # the bot plays
                     # decide
                     press = bot.decide(mode, y, vy, gates, gaps, pressed)
-                if mode != last_mode and mode == bot.GAME_OVER:         # a game has just ended
-                    games += 1                                          # count it
-                last_mode = mode                                        # remember the mode
                 # to draw
                 game = {"mode": mode, "score": score, "best": best, "y": y, "vy": vy,
                         "gates": gates, "gaps": gaps, "aim": bot.aim_y(gates, gaps),
@@ -213,7 +186,7 @@ class Demo:
                     game["press"] = fired
                 fired = False                                           # counted from here again
                 # send it out
-                self.publish(phase=phase, game=game, debug=debug, games=games)
+                self.publish(phase=phase, game=game, debug=debug)
             link.step()                                                 # answer: the emulator runs the next frame
 
 
@@ -260,7 +233,7 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path in FILES:                                        # the page itself
             name, kind = FILES[self.path]                               # which file
             with open(os.path.join(HERE, name), "rb") as f:             # read it from this folder
-                self.reply(200, f.read(), kind + "; charset=utf-8")     # send it
+                self.reply(200, f.read(), kind + ("; charset=utf-8" if kind.startswith("text") else ""))
         else:                                                           # nothing else is served
             self.reply(404, b"{}")                                      # not found
 

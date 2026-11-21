@@ -25,24 +25,13 @@ const addr = (value) => "$" + hex(value, 8);                           // 32-bit
 
 // ---- writing to the page: only what changed, 25 times a second ----
 
-const calm = matchMedia("(prefers-reduced-motion: reduce)");           // the viewer asked for no motion
-
-function flash(el, strength) {                                         // a short glow on a changed value
-  if (calm.matches || !el.animate) return;                             // none if motion is reduced
-  el._flash?.cancel();                                                 // restart rather than stack
-  el._flash = el.animate(                                              // fades out on its own
-    [{ boxShadow: `inset 0 0 0 100px rgba(255, 255, 255, ${strength})` }, { boxShadow: "inset 0 0 0 100px rgba(255, 255, 255, 0)" }],
-    { duration: 450, easing: "ease-out" });
-}
-
-// Sets an element's text if it differs. nil marks a placeholder; glow > 0 flashes a real change.
-function put(el, text, nil = false, glow = 0) {
+// Sets an element's text if it differs; nil marks a placeholder. No glow or animation on a change: the page
+// repaints 25 times a second, and effects cost the browser CPU that the emulator and the bot need on a slow PC.
+function put(el, text, nil = false) {
   text = String(text);                                                 // numbers too
   if (el.textContent === text) return;                                 // nothing to do
-  const was = el.dataset.nil === undefined;                            // it held a real value
   el.textContent = text;                                               // the new value
   el.toggleAttribute("data-nil", nil);                                 // placeholders are dimmed
-  if (glow && was && !nil) flash(el, glow);                            // only changes between values
 }
 
 function lamp(el, on) {                                                // an on/off indicator
@@ -93,7 +82,6 @@ function caption() {                                                   // the ho
 }
 
 const bytes = [];                                                      // one element per byte
-const fieldOf = [];                                                    // which field each byte belongs to
 const rows = {};                                                       // table cells, by field
 
 function build() {                                                     // once: the dump and the table
@@ -113,7 +101,6 @@ function build() {                                                     // once: 
     b.textContent = "··";
     dump.lastChild.append(b);
     bytes.push(b);
-    fieldOf.push(field);
   }
   for (const f of SHOWN) {
     const tr = document.createElement("tr");
@@ -151,19 +138,19 @@ function showBlock(debug) {                                      // the 34 bytes
     const row = rows[f.key];
     const mine = ok ? b.slice(f.off, f.off + f.len) : [];
     put(row.hex, mine.map((v) => hex(v, 2)).join("").replace(/(.{4})(?=.)/g, "$1 "));
-    put(row.val, ok ? f.value(b) : "–", !ok);                          // no glow: the bytes above show changes
+    put(row.val, ok ? f.value(b) : "–", !ok);
   }
 }
 
 function showCpu(debug) {                                              // the 68000's registers
-  put($("pc"), debug ? addr(debug.pc) : "–", !debug, 0.12);
+  put($("pc"), debug ? addr(debug.pc) : "–", !debug);
   for (let i = 0; i < 8; i++) {
-    put($("d" + i), debug ? addr(debug.d[i]) : "–", !debug, 0.12);
-    put($("a" + i), debug ? addr(debug.a[i]) : "–", !debug, 0.12);
+    put($("d" + i), debug ? addr(debug.d[i]) : "–", !debug);
+    put($("a" + i), debug ? addr(debug.a[i]) : "–", !debug);
   }
   lamp($("a4-tag"), debug?.a[4] === STATE_ADDR);                       // the game keeps its state here
   const sr = debug?.sr ?? 0;
-  put($("sr"), debug ? "$" + hex(sr, 4) : "–", !debug, 0.12);
+  put($("sr"), debug ? "$" + hex(sr, 4) : "–", !debug);
   put($("sr-ipl"), debug ? (sr >> 8) & 7 : "–", !debug);               // interrupt mask
   lamp($("sr-s"), debug && sr & 0x2000);                               // supervisor
   lamp($("sr-x"), debug && sr & 0x10);                                 // condition codes
@@ -221,13 +208,14 @@ function draw(game) {
 const FIRE_HOLD_MS = 120;                                              // a press lasts one frame: keep it visible
 let fireUntil = 0;                                                     // when the lamp goes off
 
-function showGame(game, games) {
+function showGame(game) {
   put($("score"), game ? game.score : "–", !game);                     // big figures
   put($("best"), game ? game.best : "–", !game);                       // same
   const now = performance.now();
   if (game?.press && $("bot").checked) fireUntil = now + FIRE_HOLD_MS; // what the bot sends, nothing else
   if (!game || !$("bot").checked) fireUntil = 0;                       // off at once when nothing plays
   lamp($("fire"), now < fireUntil);
+  $("fire").classList.toggle("off", !game || !$("bot").checked);       // dimmed when the bot is not playing
 }
 
 function showDebug(debug) {
@@ -244,7 +232,7 @@ function showState(state) {
   $("bot").checked = state.bot;                                        // the switch follows the server
   $("error").textContent = state.error ?? "";                          // empty when all is well
   draw(state.game);                                                    // the entity view
-  showGame(state.game, state.games);                                   // its numbers
+  showGame(state.game);                                                // its numbers
   showDebug(state.debug);                                              // the emulator's state
 }
 

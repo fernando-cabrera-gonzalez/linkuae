@@ -4,7 +4,7 @@ Copies Configurations/Kickstarts/Savestates/adf, rewrites the old folder path
 inside .uae files, and exports the WinUAE registry settings into winuae.ini
 (ini mode: the test build never touches the registry of the normal install).
 
-  python -I make_test_folder.py D:\\WinUAE6030_x64 D:\\LinkUAE
+  python -I make_test_folder.py C:\\WinUAE C:\\LinkUAE_test
 """
 import os
 import shutil

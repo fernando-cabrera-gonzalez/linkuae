@@ -5,6 +5,7 @@
   <img alt="Python 3.9+" src="https://img.shields.io/badge/python-3.9%2B-3776AB?logo=python&logoColor=white">
   <img alt="Boot sector: 1012 bytes" src="https://img.shields.io/badge/boot%20sector-1012%20bytes-ff8a3d">
   <img alt="No Kickstart needed" src="https://img.shields.io/badge/Kickstart-not%20needed-2ea44f">
+  <a href="https://www.youtube.com/watch?v=sLp_Mc7ky3E"><img alt="Demo on video" src="https://img.shields.io/badge/demo-on%20video-FF0000?logo=youtube&logoColor=white"></a>
 </p>
 
 <p align="center">
@@ -14,10 +15,17 @@
 </p>
 
 <p align="center">
+  <a href="https://www.youtube.com/watch?v=sLp_Mc7ky3E"><img src="https://img.youtube.com/vi/sLp_Mc7ky3E/hqdefault.jpg" alt="Video: the bot plays Pulse" width="60%"></a><br>
+  ▶️ <b><a href="https://www.youtube.com/watch?v=sLp_Mc7ky3E">Watch the bot play Pulse</a></b>, with the panel beside it.
+</p>
+
+<p align="center">
+  <a href="#what-you-need">What you need</a> ·
   <a href="#run-it">Run it</a> ·
   <a href="#the-panel">The panel</a> ·
   <a href="#how-the-bot-sees-the-game">How the bot sees the game</a> ·
-  <a href="#build-the-disk">Build the disk</a>
+  <a href="#build-the-disk">Build the disk</a> ·
+  <a href="#every-game-is-different">Every game is different</a>
 </p>
 
 ---
@@ -30,12 +38,14 @@ A square falls, each button press pushes it up, and barriers with a gap come fro
 |---|---|
 | 🎮 **The game** | `pulse.s`, 68000 assembly, 1012 bytes at most. It takes over the machine and draws with hardware sprites. |
 | 🤖 **The bot** | `bot.py`: reads one 34-byte block of the game's memory each frame and answers with the fire button. |
-| 📊 **The panel** | `panel.py` + a web page: the game drawn from its state, the raw bytes and the CPU registers. |
+| 📊 **The panel** | `panel.py` + a web page: the game drawn from its state with the bot's aim on top, the raw bytes, the button it sends and the 68000 registers. |
 
 > [!NOTE]
 > It needs **no Kickstart and no Workbench**: it boots on the AROS ROM built into WinUAE, with the configuration in `pulse.uae`.
 
-## 📋 Requirements
+<a id="what-you-need"></a>
+
+## 📋 What you need
 
 | | |
 |---|---|
@@ -50,7 +60,7 @@ A square falls, each button press pushes it up, and barriers with a gap come fro
 ## 🚀 Run it
 
 > [!IMPORTANT]
-> Close any other WinUAE with LinkUAE enabled first: only one can be controlled. Likewise, a second panel on the same port refuses to start instead of fighting the first.
+> Close any other WinUAE with LinkUAE enabled first: only one can be controlled, and `panel.py` must be its only client. A second panel on the same port refuses to start instead of fighting the first.
 
 Double-click **`start_demo.cmd`**. It starts the panel at `http://127.0.0.1:8765/` (reachable only from your machine), opens it in the browser and boots the game.
 
@@ -73,7 +83,7 @@ set "WINUAE_EXE=C:\Emulators\LinkUAE\winuae64.exe"
 
 By hand:
 
-```bash
+```bat
 python panel.py path\to\winuae64.exe --start
 ```
 
@@ -88,13 +98,11 @@ Without `--start`, the panel waits for its **Start** button.
 | Section | Shows |
 |---|---|
 | 🎮 **Game** | The screen drawn from the state block, plus the bot's view: the height it aims at (dashed line) and a mark when it presses |
-| 🧠 **Game state** | The bytes read from `$60000` each frame, decoded, and the fire button the bot sends back. Hover a byte to see its field |
-| 🖥️ **CPU** | The 68000 registers as LinkUAE publishes them, at the start of each frame |
+| 🧠 **Game state** | The bytes read from `$60000` each frame, decoded. Hover a byte to see its field |
+| 🕹️ **Bot input** | The fire button the bot sends, frame by frame |
+| 🖥️ **CPU** | The 68000 registers (PC, D0-D7, A0-A7, SR) as LinkUAE publishes them at the start of each frame |
 
-**Bot plays** hands the button to the bot. Turn it off and play in the WinUAE window with the left mouse button.
-
-> [!WARNING]
-> `panel.py` is the only LinkUAE client. Two clients on one emulator would interfere with each other.
+**Bot plays** hands the button to the bot; switch it off and play yourself in the WinUAE window (left mouse button).
 
 <a id="how-the-bot-sees-the-game"></a>
 
@@ -140,11 +148,18 @@ A program loaded by AmigaDOS lands wherever the system puts it, so a bot for it 
 
 `pulse.adf` comes ready-made; rebuild it only after changing `pulse.s`. With `vasmm68k_mot` on `PATH`:
 
-```bash
+```bat
 python build_demo.py
 ```
 
 It assembles the game, checks that it fits in the boot sector (1012 bytes), adds the boot block checksum and writes `pulse.adf`. The build is byte-identical, so the disk can be checked against the source.
+
+<a id="every-game-is-different"></a>
+
+## ⚠️ Every game is different
+
+> [!WARNING]
+> **Runs are not deterministic.** The emulator waits for the bot on every frame, so a slow PC only plays slower, but two games can still differ, even on the same PC. See [why runs differ](../../../.github/README.md#determinism).
 
 ## 📂 Files
 
@@ -152,13 +167,9 @@ It assembles the game, checks that it fits in the boot sector (1012 bytes), adds
 |---|---|
 | `start_demo.cmd` | Starts everything: finds WinUAE and runs `panel.py --start` |
 | `panel.py` | Local web server: runs the emulator and the bot, and feeds the page |
-| `panel.html`, `panel.js` | The page |
+| `panel.html`, `panel.js`, `button.png` | The page and its fire button sprite |
 | `bot.py` | The bot's logic, and a bare console loop for an emulator that is already running |
 | `pulse.s` | Source of the game, in 68000 assembly |
 | `build_demo.py` | Builds `pulse.adf` from `pulse.s` |
 | `pulse.adf` | The game disk |
 | `pulse.uae` | Emulator configuration: 68000, 512 KB of chip RAM, built-in AROS ROM, `linkuae=true` |
-
-## 🔁 Reproducible
-
-The course is fixed and the protocol is lockstep, so with the same ROM, disk and bot every game is the same. Runs from a cold start gave identical hashes of the game state and sprite memory over 2000 frames, counted from the moment the game is ready. The boot itself can take a few frames more or less.

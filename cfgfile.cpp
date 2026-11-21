@@ -2090,6 +2090,7 @@ void cfgfile_save_options (struct zfile *f, struct uae_prefs *p, int type)
 #ifdef WITH_LINKUAE
 	cfgfile_dwrite_bool(f, _T("linkuae"), p->linkuae);
 	cfgfile_dwrite(f, _T("linkuae_timeout"), _T("%d"), p->linkuae_timeout);
+	cfgfile_dwrite(f, _T("linkuae_wait"), _T("%d"), p->linkuae_wait);
 #endif
 
 	cfgfile_write_rom (f, &p->path_rom, p->romfile, _T("kickstart_rom_file"));
@@ -3919,6 +3920,11 @@ static int cfgfile_parse_host (struct uae_prefs *p, TCHAR *option, TCHAR *value)
 	if (cfgfile_intval(option, value, _T("linkuae_timeout"), &p->linkuae_timeout, 1)) {
 		if (p->linkuae_timeout < 1 || p->linkuae_timeout > 60000)
 			p->linkuae_timeout = 1000;
+		return 1;
+	}
+	if (cfgfile_intval(option, value, _T("linkuae_wait"), &p->linkuae_wait, 1)) {
+		if (p->linkuae_wait < 0 || p->linkuae_wait > 600000)
+			p->linkuae_wait = 0;
 		return 1;
 	}
 #endif
@@ -8569,6 +8575,7 @@ void default_prefs (struct uae_prefs *p, bool reset, int type)
 	_tcscpy (p->description, _T("UAE default configuration"));
 #ifdef WITH_LINKUAE
 	p->linkuae_timeout = 1000; // buildin_default_prefs only runs for quickstart presets
+	p->linkuae_wait = 0;
 #endif
 	p->config_hardware_path[0] = 0;
 	p->config_host_path[0] = 0;
@@ -9065,6 +9072,7 @@ static void buildin_default_prefs (struct uae_prefs *p)
 #ifdef WITH_LINKUAE
 	p->linkuae = false;
 	p->linkuae_timeout = 1000;
+	p->linkuae_wait = 0;
 #endif
 
 	target_default_options (p, 1);

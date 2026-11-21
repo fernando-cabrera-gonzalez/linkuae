@@ -1,4 +1,7 @@
 /*
+ * Copyright (C) 2026 the LinkUAE authors. Part of this WinUAE fork, distributed under
+ * the GNU General Public License version 2 (see COPYING).
+ *
  * linkuae: low-latency external control (Windows shared memory + events).
  * inputdevice_vsync() arms the frame work; it runs at the next CPU instruction
  * boundary (SPCFLAG_CALLBACK -> device_call_main_thread_callbacks): publish
@@ -29,6 +32,7 @@ static HANDLE map_handle, frame_event, reply_event, client_process;
 static struct linkuae_shared *sh;
 static uint32_t client_pid_seen;
 static bool attached, open_failed, frame_pending, cpu_thread_warned;
+static bool hold_pending; // linkuae_wait: this frame waits for a client before running
 static uint32_t pending_vsync;
 static uint32_t held_joy[2];
 static bool held_keys[0x68];
@@ -397,7 +401,10 @@ void linkuae_vsync(void)
 			return;
 		}
 	}
-	if (!sh->client_attached && !attached)
+	// linkuae_wait: the first frame after a start, reset or savestate restore (vsync_counter is 0 there) waits for
+	// a client, so its frame 0 is always the same emulated moment instead of wherever free running got to.
+	hold_pending = currprefs.linkuae_wait > 0 && vsync_counter == 0 && !sh->client_attached;
+	if (!sh->client_attached && !attached && !hold_pending)
 		return;
 	// The threaded CPU never services SPCFLAG_CALLBACK.
 	if (currprefs.cpu_thread) {
@@ -423,6 +430,14 @@ void linkuae_instruction_boundary(void)
 		return;
 	sh->timeout_ms = currprefs.linkuae_timeout;
 
+	if (hold_pending) {
+		hold_pending = false;
+		write_log(_T("linkuae: holding the first frame for a client (up to %d ms)\n"), currprefs.linkuae_wait);
+		int64_t start = qpc_now();
+		while (!sh->client_attached && (int)(qpc_us(qpc_now() - start) / 1000) < currprefs.linkuae_wait)
+			Sleep(1);
+		write_log(sh->client_attached ? _T("linkuae: client attached, running\n") : _T("linkuae: no client, running free\n"));
+	}
 	if (!sh->client_attached) {
 		if (attached)
 			detach();

@@ -21,12 +21,12 @@
     <text x="72" y="172" font-size="66" font-weight="700" fill="#ffffff">Link<tspan fill="#ff8a3d">UAE</tspan></text>
     <text x="74" y="218" font-size="26" fill="#c9d6ee">Drive an emulated Amiga, frame by frame.</text>
     <g font-size="17" font-weight="600">
-      <rect x="74" y="248" width="128" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/>
-      <text x="138" y="271" text-anchor="middle" fill="#ffd2b3">lockstep</text>
-      <rect x="214" y="248" width="168" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/>
-      <text x="298" y="271" text-anchor="middle" fill="#bfe6ff">shared memory</text>
-      <rect x="394" y="248" width="148" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/>
-      <text x="468" y="271" text-anchor="middle" fill="#d9f5c8">bots &amp; AIs</text>
+      <rect x="74" y="248" width="168" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/>
+      <text x="158" y="271" text-anchor="middle" fill="#bfe6ff">shared memory</text>
+      <rect x="254" y="248" width="148" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/>
+      <text x="328" y="271" text-anchor="middle" fill="#d9f5c8">bots &amp; AIs</text>
+      <rect x="414" y="248" width="128" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/>
+      <text x="478" y="271" text-anchor="middle" fill="#ffd2b3">lockstep</text>
     </g>
   </g>
 

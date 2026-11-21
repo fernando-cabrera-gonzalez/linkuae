@@ -1,4 +1,7 @@
 /*
+ * Copyright (C) 2026 the LinkUAE authors. Part of this WinUAE fork, distributed under
+ * the GNU General Public License version 2 (see COPYING).
+ *
  * linkuae: low-latency external control through a named shared memory block.
  * One protocol, lockstep: on every frame the emulator publishes its state and stops.
  * The client owns the block from the new `frame` value until it stores reply_frame;

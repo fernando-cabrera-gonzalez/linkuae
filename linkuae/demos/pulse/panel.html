@@ -52,16 +52,20 @@ body {
 .wrap { max-width: 1480px; margin: 0 auto; padding: 0 clamp(16px, 2.2vw, 40px); }
 
 /* ---------- header ---------- */
-/* same two columns as main, so the run state starts where the Game state panel does */
+/* same two columns as main */
 .bar { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); align-items: center; gap: 14px clamp(18px, 2vw, 30px); padding-top: 22px; padding-bottom: 6px; }
 .lead { min-width: 0; }
-.side { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 22px; min-width: 0; }
+.side { display: flex; justify-content: flex-end; min-width: 0; }
 .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .brand svg { flex: none; display: block; }
 h1 { margin: 0; font: 700 1.5rem/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; }
 .tagline { margin: 6px 0 0; font: 0.85rem/1.3 var(--mono); color: var(--muted); }
 .tagline b { color: var(--text); font-weight: 600; }
-.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.controls { display: grid; gap: 12px; justify-items: end; }
+.group { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px 16px; }
+.group.actions { gap: 10px; }
+.group.actions button { min-width: 116px; justify-content: center; }
+.group.actions #phase { margin-right: 6px; }
 
 #phase {
   display: inline-flex; align-items: center; gap: 9px;
@@ -77,10 +81,9 @@ h1 { margin: 0; font: 700 1.5rem/1 var(--mono); letter-spacing: 0.14em; text-tra
 }
 #phase::before { content: ""; flex: none; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid currentColor; }
 #phase[data-phase="booting"] { color: var(--warn); border-color: #5c4a1d; background: #17130a; }
-#phase[data-phase="booting"]::before { background: currentColor; animation: blink 0.9s steps(2, jump-none) infinite; }
+#phase[data-phase="booting"]::before { background: currentColor; opacity: 0.5; }   /* no blinking, no glow: nothing animated on this page */
 #phase[data-phase="running"] { color: var(--accent); border-color: #1d5a40; background: #0a1812; }
-#phase[data-phase="running"]::before { background: currentColor; box-shadow: 0 0 0 3px rgba(45, 216, 137, 0.18), 0 0 10px rgba(45, 216, 137, 0.7); }
-@keyframes blink { from { opacity: 1; } to { opacity: 0.25; } }
+#phase[data-phase="running"]::before { background: currentColor; }
 
 .switch { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 4px; cursor: pointer; font-weight: 600; font-size: 0.9rem; user-select: none; }
 .switch input {
@@ -134,23 +137,24 @@ main {
   display: grid;
   grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
   gap: clamp(18px, 2vw, 30px);
-  align-items: start;
+  align-items: stretch;
   padding-top: 18px;
   padding-bottom: 40px;
 }
 .cpu { grid-column: 1 / -1; }
-/* same height side by side: the spare space goes above each card's last block */
-.game, .state { align-self: stretch; display: flex; flex-direction: column; }
+/* two columns of the same height: the game on the left, the game state and the bot input on the right */
+.left, .right { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.game, .right > .state { flex: 1 0 auto; display: flex; flex-direction: column; }
 .glass { margin-bottom: 16px; }
-.scoreline { margin-top: auto; }
-.fields { flex: 1 0 auto; }  /* the table's rows share the spare height */
-section, details { min-width: 0; }
+.scoreline { margin: 2px 0 14px; }
+.fields { flex: 1 0 auto; }  /* the rows share the spare height, so the state card ends where the left column ends */
+#state-msg:empty { display: none; }
+section { min-width: 0; }
 .card { padding: 16px 18px 18px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); }
 
 .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding-bottom: 9px; margin-bottom: 14px; border-bottom: 1px solid var(--border); }
 .ch { font: 700 0.72rem/1 var(--mono); color: var(--accent); letter-spacing: 0.08em; }
 h2 { margin: 0; font: 700 0.82rem/1.2 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; }
-.meta { margin-left: auto; font: 0.78rem/1.3 var(--mono); color: var(--muted); }
 .lbl { display: block; font: 600 0.7rem/1.2 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 [data-nil] { color: var(--dim) !important; }
 
@@ -164,49 +168,15 @@ canvas { display: block; width: 100%; height: auto; aspect-ratio: 640 / 512; ima
 .overlay kbd { font: 700 0.8em var(--mono); padding: 2px 7px; border: 1px solid var(--accent); border-radius: 4px; color: var(--accent); }
 .ov-stopped .msg { color: var(--label); }
 .ov-booting .msg { color: var(--warn); }
-.ov-booting svg rect { animation: blink 0.9s steps(2, jump-none) infinite; }
 body:has(#phase[data-phase="stopped"]) .ov-stopped,
 body:has(#phase[data-phase="booting"]) .ov-booting { display: grid; }
 
-.scoreline { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 1.4fr); border-top: 1px solid var(--border); }
-.scoreline > div { padding: 12px 16px 0; border-left: 1px solid var(--border); min-width: 0; }
+.scoreline { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+.scoreline > div { padding: 0 16px; border-left: 1px solid var(--border); min-width: 0; }
 .scoreline > div:first-child { border-left: 0; padding-left: 0; }
 .scoreline > div > b { display: block; font: 700 clamp(2.4rem, 4vw, 3.6rem)/1.05 var(--mono); white-space: nowrap; }
 #score { color: var(--square); }
-.who { align-self: center; font-size: 0.85rem; color: var(--muted); }
-.who .bot-on b { color: var(--aim); font-weight: 600; }
-.who .bot-off { display: none; color: #ffe68a; }
-body:has(#bot:not(:checked)) .who .bot-on { display: none; }
-body:has(#bot:not(:checked)) .who .bot-off { display: block; }
-.who p { margin: 0; }
-
 /* ---------- 02 game state ---------- */
-.code {
-  margin: 0 0 14px; padding: 12px 14px;
-  border: 1px solid var(--border); border-radius: 8px; background: var(--well);
-  font: 0.88rem/1.65 var(--mono); color: var(--text);
-  white-space: pre; overflow-x: auto;
-}
-.code .c { color: var(--dim); }
-.code .k { color: var(--aim); }
-.code .n { color: var(--square); }
-.inputline { display: flex; align-items: center; gap: 12px; margin: -4px 0 14px; }
-#fire {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 5px 12px 5px 10px;
-  border: 1px solid var(--border-hi); border-radius: 4px;
-  font: 800 0.78rem/1 var(--mono); letter-spacing: 0.16em;
-  color: var(--dim); background: var(--panel-hi);
-}
-#fire::before { content: ""; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid currentColor; }
-#fire[data-on="true"] { color: #2b0d07; background: var(--stop); border-color: var(--stop); }
-#fire[data-on="true"]::before { background: #2b0d07; border-color: #2b0d07; }
-body:has(#bot:not(:checked)) #fire { border-style: dashed; background: transparent; color: var(--dim); }
-body:has(#bot:not(:checked)) #fire::before { background: transparent; border-color: currentColor; }
-.inputline .hint { font-size: 0.8rem; color: var(--muted); }
-.inputline .hint .off { display: none; }
-body:has(#bot:not(:checked)) .inputline .hint .on { display: none; }
-body:has(#bot:not(:checked)) .inputline .hint .off { display: inline; }
 
 .dump { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--well); font: 1rem/1 var(--mono); overflow-x: auto; }
 .dump .row { display: flex; align-items: center; gap: 0; height: 1.9rem; white-space: nowrap; }
@@ -218,15 +188,15 @@ body:has(#bot:not(:checked)) .inputline .hint .off { display: inline; }
 
 .f-sig { --c: var(--f-minor); } .f-mode { --c: var(--f-mode); } .f-score { --c: var(--f-score); }
 .f-y { --c: var(--f-y); } .f-speed { --c: var(--f-speed); } .f-gatex { --c: var(--f-gatex); }
-.f-gap { --c: var(--f-gap); } .f-best { --c: var(--f-best); } .f-fy, .f-seed, .f-btn, .f-pad, .f-wait { --c: var(--f-minor); }
+.f-gap { --c: var(--f-gap); } .f-best { --c: var(--f-best); } .f-fy, .f-seed, .f-btn, .f-pad { --c: var(--f-minor); }
 .dump .b { color: var(--c); }
 .dump .b.hl { background: color-mix(in srgb, var(--c) 24%, transparent); box-shadow: inset 0 0 0 1px var(--c); color: var(--text); }
 
-.fields { width: 100%; border-collapse: collapse; table-layout: fixed; font: 0.88rem/1 var(--mono); }
+.fields { width: 100%; border-collapse: collapse; table-layout: fixed; font: 1.08rem/1.2 var(--mono); }
 .fields col.c-off { width: 4.5em; }
 .fields col.c-hex { width: 9.5em; }
 .fields col.c-val { width: 42%; }
-.fields th { height: 1.9rem; padding: 0 8px; text-align: left; font: 600 0.68rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border-hi); }
+.fields th { height: 2.1rem; padding: 0 8px; text-align: left; font: 600 0.8rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border-hi); }
 .fields td { height: 2rem; padding: 0 8px; border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fields th:first-child, .fields td:first-child { padding-left: 4px; }
 .fields td.off { color: var(--dim); font-size: 0.78rem; }
@@ -239,7 +209,7 @@ body:has(#bot:not(:checked)) .inputline .hint .off { display: inline; }
 .fields tr.hl td { background: color-mix(in srgb, var(--c) 16%, transparent); }
 .fields tr.hl td:first-child { box-shadow: inset 3px 0 0 var(--c); }
 
-/* ---------- 03 cpu ---------- */
+/* ---------- 04 cpu ---------- */
 .cpu-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.5fr) minmax(0, 1.1fr); gap: 0; }
 .cpu-grid > div { padding: 0 20px; border-left: 1px solid var(--border); min-width: 0; }
 .cpu-grid > div:first-child { padding-left: 0; border-left: 0; }
@@ -274,16 +244,16 @@ body:has(#bot:not(:checked)) .inputline .hint .off { display: inline; }
   .bar { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 560px) {
-  .scoreline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .scoreline > .who { grid-column: 1 / -1; border-left: 0; padding-left: 0; }
   .regs { grid-template-columns: minmax(0, 1fr); }
   .fields col.c-hex { width: 0; }
   .fields .hex { display: none; }
   .dump { font-size: 0.9rem; }
 }
-@media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; }
-}
+.arcade { display: flex; align-items: center; justify-content: space-around; gap: 18px; padding: 4px 0 2px; }
+.pad { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+#fire { width: 128px; height: 128px; flex: none; padding: 0; border: 0; cursor: default; background: url(/button.png) 0 0 / 256px 128px no-repeat; image-rendering: pixelated; }
+#fire[data-on="true"] { background-position: -128px 0; }
+#fire.off { opacity: 0.35; }
 </style>
 </head>
 <body>
@@ -299,14 +269,17 @@ body:has(#bot:not(:checked)) .inputline .hint .off { display: inline; }
     </svg>
     <div>
       <h1>Pulse</h1>
-      <p class="tagline">LinkUAE: <b>external control of a running Amiga, frame by frame</b></p>
+      <p class="tagline">LinkUAE: <b>external control of WinUAE, frame by frame</b></p>
     </div>
   </div>
   </div>
   <div class="side">
-  <span id="phase" data-phase="stopped">Stopped</span>
   <div class="controls">
-    <label class="switch"><input type="checkbox" id="bot" checked> Bot plays</label>
+    <div class="group setup">
+      <label class="switch"><input type="checkbox" id="bot" checked> Bot plays</label>
+    </div>
+    <div class="group actions">
+    <span id="phase" data-phase="stopped">Stopped</span>
     <button id="start" type="button">
       <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z" fill="currentColor"/></svg>
       Start
@@ -315,16 +288,22 @@ body:has(#bot:not(:checked)) .inputline .hint .off { display: inline; }
       <svg width="11" height="11" viewBox="0 0 11 11" aria-hidden="true"><rect width="11" height="11" rx="1" fill="currentColor"/></svg>
       Stop
     </button>
+    </div>
   </div>
   </div>
 </header>
 <div class="wrap"><div id="error" role="alert"></div></div>
 
 <main class="wrap">
+  <div class="left">
   <section class="card game" aria-labelledby="h-game">
     <div class="head">
       <span class="ch">01</span>
       <h2 id="h-game">Game</h2>
+    </div>
+    <div class="scoreline">
+      <div><span class="lbl">Score</span><b id="score" data-nil>–</b></div>
+      <div><span class="lbl">Best</span><b id="best" data-nil>–</b></div>
     </div>
     <div class="glass">
       <canvas id="game" width="640" height="512" aria-label="Game entities, drawn from the emulator's memory"></canvas>
@@ -339,28 +318,14 @@ body:has(#bot:not(:checked)) .inputline .hint .off { display: inline; }
         <p>Waiting for the game to be ready.</p>
       </div>
     </div>
-    <div class="scoreline">
-      <div><span class="lbl">Score</span><b id="score" data-nil>–</b></div>
-      <div><span class="lbl">Best</span><b id="best" data-nil>–</b></div>
-      <div class="who">
-        <p class="bot-on"><b>Bot plays.</b> Each frame it reads Game state and decides whether to press fire.</p>
-        <p class="bot-off">With the bot off, play in the WinUAE window with the left mouse button.</p>
-      </div>
-    </div>
   </section>
 
+  </div>
+  <div class="right">
   <section class="card state" id="state" aria-labelledby="h-state">
     <div class="head">
       <span class="ch">02</span>
       <h2 id="h-state">Game state</h2>
-    </div>
-<pre class="code"><span class="k">frame</span>.read(<span class="n">0x60000</span>, <span class="n">34</span>)        <span class="c"># read the game's memory</span>
-<span class="k">link</span>.joy(<span class="n">1</span>, fire=press)        <span class="c"># send input</span>
-<span class="k">link</span>.step()                    <span class="c"># run the next frame</span></pre>
-    <div class="inputline">
-      <span class="lbl">Bot input</span>
-      <span id="fire" data-on="false">FIRE</span>
-      <span class="hint"><span class="on">lit when the bot presses on this frame</span><span class="off">inactive: the bot is off</span></span>
     </div>
     <div class="dump" id="dump" aria-label="The 34 bytes of the state block, in hexadecimal"></div>
     <p class="caption" id="state-msg">No data: the demo is not running.</p>
@@ -370,10 +335,22 @@ body:has(#bot:not(:checked)) .inputline .hint .off { display: inline; }
       <tbody id="fields-main"></tbody>
     </table>
   </section>
+  <section class="card input" aria-labelledby="h-input">
+    <div class="head">
+      <span class="ch">03</span>
+      <h2 id="h-input">Bot input</h2>
+    </div>
+    <div class="arcade">
+      <div class="pad">
+        <div id="fire" class="off" role="img" aria-label="Fire button: lit when the bot presses" data-on="false"></div>
+      </div>
+    </div>
+  </section>
+  </div>
 
   <section class="card cpu" aria-labelledby="h-cpu">
     <div class="head">
-      <span class="ch">03</span>
+      <span class="ch">04</span>
       <h2 id="h-cpu">CPU</h2>
     </div>
     <div class="cpu-grid">
